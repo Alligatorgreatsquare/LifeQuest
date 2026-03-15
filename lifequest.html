@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<!-- saved from url=(0047)file:///C:/Users/henry/Downloads/lifequest.html -->
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="en">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>LifeQuest</title>
 <style>
@@ -265,7 +265,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 #lvlup.on { display: block; animation: lvlAnim 2s ease-out forwards; }
 </style>
 </head>
-<body class="">
+<body>
 
 <!-- HEADER -->
 <div id="header">
@@ -291,7 +291,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   <div class="page on" id="pg-quests">
     <div class="section-pad">
       <div class="page-title">Daily Quests</div>
-      <div id="quest-list"><div class="quest-card" onclick="claimQuest(0)"><div class="quest-icon">💪</div><div class="quest-info"><div class="quest-name">Power Hour</div><div class="quest-desc">Complete 3 habits today</div></div><div class="quest-xp">+80 XP</div></div><div class="quest-card" onclick="claimQuest(1)"><div class="quest-icon">🔥</div><div class="quest-info"><div class="quest-name">Keep the Flame</div><div class="quest-desc">Maintain your daily streak</div></div><div class="quest-xp">+60 XP</div></div><div class="quest-card" onclick="claimQuest(2)"><div class="quest-icon">🧠</div><div class="quest-info"><div class="quest-name">Multi-Front War</div><div class="quest-desc">Complete habits in 2 different sections</div></div><div class="quest-xp">+90 XP</div></div></div>
+      <div id="quest-list"></div>
       <div style="margin-top:20px">
         <div class="page-title" style="font-size:0.85rem;margin-bottom:12px">Focus Mode</div>
         <div style="background:var(--surface);border-radius:var(--radius);padding:16px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
@@ -299,7 +299,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
             <div style="font-size:0.85rem;font-weight:600;margin-bottom:3px">Deep Work Session</div>
             <div style="font-size:0.7rem;color:var(--muted)">25 min · +50 XP · 20 boss dmg</div>
           </div>
-          <button onclick="openFocus()" style="padding:9px 18px;background:var(--accent-color);color:#fff;border:none;border-radius:var(--radius-sm);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:&#39;Inter&#39;,sans-serif">Start</button>
+          <button onclick="openFocus()" style="padding:9px 18px;background:var(--accent-color);color:#fff;border:none;border-radius:var(--radius-sm);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">Start</button>
         </div>
       </div>
     </div>
@@ -308,7 +308,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   <!-- HABITS -->
   <div class="page" id="pg-habits">
     <div id="areas-container"></div>
-    <div class="add-area-row" onclick="openModal(&#39;m-area&#39;)">
+    <div class="add-area-row" onclick="openModal('m-area')">
       <span style="font-size:1rem">+</span> Add Section
     </div>
   </div>
@@ -317,7 +317,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   <div class="page" id="pg-boss">
     <div class="section-pad">
       <div class="page-title">Weekly Boss</div>
-      <div id="boss-container"><div class="boss-card"><div class="boss-emoji">👹</div><div class="boss-name-txt">The Procrastination Demon</div><div class="boss-phase-txt">Phase 1 — The Temptation</div><div class="boss-hp-bar"><div class="boss-hp-fill" style="width:100%"></div></div><div class="boss-hp-nums">108 / 108 HP</div><div class="boss-taunt">"Just check your phone for a sec..."</div><div class="boss-taunt">"Rest today, grind tomorrow."</div><div style="font-size:0.68rem;color:var(--muted);margin-top:12px;line-height:1.6">Habit = 5 dmg &nbsp;·&nbsp; Quest = 15 dmg &nbsp;·&nbsp; Focus session = 20 dmg</div></div></div>
+      <div id="boss-container"></div>
     </div>
   </div>
 
@@ -325,7 +325,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   <div class="page" id="pg-skills">
     <div class="section-pad">
       <div class="page-title">Skill Tree</div>
-      <div id="skill-list"><div class="skill-row"><div class="skill-icon">⚡</div><div class="skill-info"><div class="skill-name">Quick Start</div><div class="skill-desc">First task of the day gives +50% XP</div><div class="skill-req">Complete 5 tasks total</div></div><div class="skill-status">Locked</div></div><div class="skill-row"><div class="skill-icon">🔥</div><div class="skill-info"><div class="skill-name">Streak Master</div><div class="skill-desc">Streak bonuses doubled</div><div class="skill-req">Reach a 7-day streak</div></div><div class="skill-status">Locked</div></div><div class="skill-row"><div class="skill-icon">🛡</div><div class="skill-info"><div class="skill-name">Iron Will</div><div class="skill-desc">Boss battle damage +25%</div><div class="skill-req">Complete 50 tasks total</div></div><div class="skill-status">Locked</div></div><div class="skill-row"><div class="skill-icon">⚔️</div><div class="skill-info"><div class="skill-name">Momentum</div><div class="skill-desc">Each habit after 3 consecutive gives +20 XP</div><div class="skill-req">Reach Level 5</div></div><div class="skill-status">Locked</div></div><div class="skill-row"><div class="skill-icon">🧘</div><div class="skill-info"><div class="skill-name">Focus Mastery</div><div class="skill-desc">Focus mode XP doubled</div><div class="skill-req">Complete 10 focus sessions</div></div><div class="skill-status">Locked</div></div><div class="skill-row"><div class="skill-icon">👑</div><div class="skill-info"><div class="skill-name">Champion</div><div class="skill-desc">All XP gains +30%</div><div class="skill-req">Reach Platinum rank (Lv 27)</div></div><div class="skill-status">Locked</div></div></div>
+      <div id="skill-list"></div>
     </div>
   </div>
 
@@ -333,9 +333,9 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   <div class="page" id="pg-stats">
     <div class="section-pad">
       <div class="page-title">Stats</div>
-      <div class="stats-grid" id="stats-grid"><div class="stat-tile"><div class="stat-num">0</div><div class="stat-lbl">Total XP</div></div><div class="stat-tile"><div class="stat-num">0</div><div class="stat-lbl">Best Streak</div></div><div class="stat-tile"><div class="stat-num">0</div><div class="stat-lbl">Tasks Done</div></div><div class="stat-tile"><div class="stat-num">0</div><div class="stat-lbl">Bosses Slain</div></div></div>
+      <div class="stats-grid" id="stats-grid"></div>
       <div class="page-title" style="font-size:0.85rem;margin-bottom:10px">Rank Ladder</div>
-      <div id="rank-list"><div class="rank-row"><div class="rank-dot" style="background:var(--accent-color)"></div><div class="rank-name-txt" style="font-weight:600;color:var(--text)">Iron I</div><div class="rank-lv">Lv 1</div><div style="font-size:0.7rem;color:var(--accent-color)">✓</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Iron II</div><div class="rank-lv">Lv 3</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Bronze I</div><div class="rank-lv">Lv 5</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Bronze II</div><div class="rank-lv">Lv 8</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Silver I</div><div class="rank-lv">Lv 11</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Silver II</div><div class="rank-lv">Lv 14</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Gold I</div><div class="rank-lv">Lv 18</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Gold II</div><div class="rank-lv">Lv 22</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Platinum</div><div class="rank-lv">Lv 27</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Diamond</div><div class="rank-lv">Lv 33</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Master</div><div class="rank-lv">Lv 40</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Grandmaster</div><div class="rank-lv">Lv 48</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Legend</div><div class="rank-lv">Lv 57</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Mythic</div><div class="rank-lv">Lv 68</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Eternal</div><div class="rank-lv">Lv 80</div></div></div>
+      <div id="rank-list"></div>
     </div>
   </div>
 
@@ -345,9 +345,9 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
       <div class="settings-row">
         <div>
           <div class="settings-label">Player Name</div>
-          <input id="name-inp" class="m-input" style="margin:8px 0 0;width:200px" placeholder="Your name…">
+          <input id="name-inp" class="m-input" style="margin:8px 0 0;width:200px" placeholder="Your name…" />
         </div>
-        <button onclick="saveName()" style="padding:9px 16px;background:var(--accent-color);color:#fff;border:none;border-radius:var(--radius-sm);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:&#39;Inter&#39;,sans-serif">Save</button>
+        <button onclick="saveName()" style="padding:9px 16px;background:var(--accent-color);color:#fff;border:none;border-radius:var(--radius-sm);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">Save</button>
       </div>
     </div>
     <div class="settings-section">
@@ -359,12 +359,12 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
       </div>
       <div style="padding:0 20px 16px">
         <div class="theme-dots" id="theme-dots">
-          <div class="theme-dot on" style="background:#6366f1" onclick="setTheme(&#39;&#39;)" title="Indigo"></div>
-          <div class="theme-dot" style="background:#f97316" onclick="setTheme(&#39;fire&#39;)" title="Fire"></div>
-          <div class="theme-dot" style="background:#22c55e" onclick="setTheme(&#39;green&#39;)" title="Green"></div>
-          <div class="theme-dot" style="background:#a855f7" onclick="setTheme(&#39;violet&#39;)" title="Violet"></div>
-          <div class="theme-dot" style="background:#f43f5e" onclick="setTheme(&#39;rose&#39;)" title="Rose"></div>
-          <div class="theme-dot" style="background:#0ea5e9" onclick="setTheme(&#39;sky&#39;)" title="Sky"></div>
+          <div class="theme-dot on" style="background:#6366f1" onclick="setTheme('')" title="Indigo"></div>
+          <div class="theme-dot" style="background:#f97316" onclick="setTheme('fire')" title="Fire"></div>
+          <div class="theme-dot" style="background:#22c55e" onclick="setTheme('green')" title="Green"></div>
+          <div class="theme-dot" style="background:#a855f7" onclick="setTheme('violet')" title="Violet"></div>
+          <div class="theme-dot" style="background:#f43f5e" onclick="setTheme('rose')" title="Rose"></div>
+          <div class="theme-dot" style="background:#0ea5e9" onclick="setTheme('sky')" title="Sky"></div>
         </div>
       </div>
     </div>
@@ -374,7 +374,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
           <div class="settings-label">Reset Daily Habits</div>
           <div class="settings-sub">Un-checks all habits. Keeps XP.</div>
         </div>
-        <button onclick="resetDaily()" style="padding:9px 16px;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:&#39;Inter&#39;,sans-serif">Reset</button>
+        <button onclick="resetDaily()" style="padding:9px 16px;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">Reset</button>
       </div>
     </div>
   </div>
@@ -383,27 +383,27 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 <!-- BOTTOM TAB BAR -->
 <div id="tabbar">
-  <div class="tab on" onclick="showTab(&#39;quests&#39;,this)">
+  <div class="tab on" onclick="showTab('quests',this)">
     <div class="tab-icon">⚡</div>
     <div class="tab-label">Quests</div>
   </div>
-  <div class="tab" onclick="showTab(&#39;habits&#39;,this)">
+  <div class="tab" onclick="showTab('habits',this)">
     <div class="tab-icon">📋</div>
     <div class="tab-label">Habits</div>
   </div>
-  <div class="tab" onclick="showTab(&#39;boss&#39;,this)">
+  <div class="tab" onclick="showTab('boss',this)">
     <div class="tab-icon">👹</div>
     <div class="tab-label">Boss</div>
   </div>
-  <div class="tab" onclick="showTab(&#39;skills&#39;,this)">
+  <div class="tab" onclick="showTab('skills',this)">
     <div class="tab-icon">🌟</div>
     <div class="tab-label">Skills</div>
   </div>
-  <div class="tab" onclick="showTab(&#39;stats&#39;,this)">
+  <div class="tab" onclick="showTab('stats',this)">
     <div class="tab-icon">📊</div>
     <div class="tab-label">Stats</div>
   </div>
-  <div class="tab" onclick="showTab(&#39;settings&#39;,this)">
+  <div class="tab" onclick="showTab('settings',this)">
     <div class="tab-icon">⚙️</div>
     <div class="tab-label">Settings</div>
   </div>
@@ -414,8 +414,8 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   <div id="focus-label">Focus Mode</div>
   <div class="focus-ring-wrap">
     <svg width="180" height="180">
-      <circle class="frb" cx="90" cy="90" r="80"></circle>
-      <circle class="frp" id="frp" cx="90" cy="90" r="80" stroke-dasharray="502" stroke-dashoffset="0"></circle>
+      <circle class="frb" cx="90" cy="90" r="80"/>
+      <circle class="frp" id="frp" cx="90" cy="90" r="80" stroke-dasharray="502" stroke-dashoffset="0"/>
     </svg>
     <div id="f-time-inner">25:00</div>
   </div>
@@ -432,9 +432,9 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 <div class="modal-bg" id="m-area">
   <div class="modal-sheet">
     <div class="modal-title">New Section</div>
-    <input class="m-input" id="area-name-inp" placeholder="e.g. Workout, School, Reading…">
+    <input class="m-input" id="area-name-inp" placeholder="e.g. Workout, School, Reading…" />
     <div class="m-btns">
-      <button class="m-btn no" onclick="closeModal(&#39;m-area&#39;)">Cancel</button>
+      <button class="m-btn no" onclick="closeModal('m-area')">Cancel</button>
       <button class="m-btn ok" onclick="confirmArea()">Create</button>
     </div>
   </div>
@@ -444,9 +444,9 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 <div class="modal-bg" id="m-sub">
   <div class="modal-sheet">
     <div class="modal-title">New Sub-section</div>
-    <input class="m-input" id="sub-name-inp" placeholder="e.g. Strength, Cardio, Algebra…">
+    <input class="m-input" id="sub-name-inp" placeholder="e.g. Strength, Cardio, Algebra…" />
     <div class="m-btns">
-      <button class="m-btn no" onclick="closeModal(&#39;m-sub&#39;)">Cancel</button>
+      <button class="m-btn no" onclick="closeModal('m-sub')">Cancel</button>
       <button class="m-btn ok" onclick="confirmSub()">Create</button>
     </div>
   </div>
@@ -456,15 +456,15 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 <div class="modal-bg" id="m-habit">
   <div class="modal-sheet">
     <div class="modal-title">New Habit</div>
-    <input class="m-input" id="hab-name-inp" placeholder="Habit name…">
+    <input class="m-input" id="hab-name-inp" placeholder="Habit name…" />
     <select class="m-select" id="hab-xp-inp">
       <option value="10">Easy — 10 XP</option>
-      <option value="25" selected="">Medium — 25 XP</option>
+      <option value="25" selected>Medium — 25 XP</option>
       <option value="50">Hard — 50 XP</option>
       <option value="100">Epic — 100 XP</option>
     </select>
     <div class="m-btns">
-      <button class="m-btn no" onclick="closeModal(&#39;m-habit&#39;)">Cancel</button>
+      <button class="m-btn no" onclick="closeModal('m-habit')">Cancel</button>
       <button class="m-btn ok" onclick="confirmHabit()">Add</button>
     </div>
   </div>
@@ -965,6 +965,5 @@ function showTab(name, el){
   if(name==='stats') renderStats();
 }
 </script>
-
-
-</body></html>
+</body>
+</html>
