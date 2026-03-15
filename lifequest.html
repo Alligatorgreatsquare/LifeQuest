@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<!-- saved from url=(0047)file:///C:/Users/henry/Downloads/lifequest.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>LifeQuest</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap');
+
+:root {
+  --bg: #0f0f0f;
+  --surface: #1a1a1a;
+  --surface2: #222222;
+  --border: #2a2a2a;
+  --accent: #e8e8e8;
+  --accent-color: #6366f1;
+  --muted: #666;
+  --muted2: #444;
+  --text: #f0f0f0;
+  --text2: #aaa;
+  --green: #22c55e;
+  --gold: #f59e0b;
+  --red: #ef4444;
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+.t-fire   { --accent-color:#f97316; }
+.t-green  { --accent-color:#22c55e; }
+.t-violet { --accent-color:#a855f7; }
+.t-rose   { --accent-color:#f43f5e; }
+.t-sky    { --accent-color:#0ea5e9; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; }
+
+/* ── HEADER ── */
+#header {
+  padding: 16px 20px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+#hdr-left { display: flex; flex-direction: column; gap: 2px; }
+#player-name { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; letter-spacing: -0.01em; }
+#hdr-sub { font-size: 0.7rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+#rank-tag { color: var(--accent-color); font-weight: 600; }
+#hdr-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+#streak-pill { display: flex; align-items: center; gap: 4px; font-size: 0.72rem; font-weight: 600; color: var(--gold); }
+.xp-strip { width: 120px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.xp-strip-fill { height: 100%; border-radius: 2px; background: var(--accent-color); transition: width 0.5s; }
+#xp-label { font-size: 0.62rem; color: var(--muted); }
+
+/* ── SCROLL BODY ── */
+#scroll-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 80px;
+}
+#scroll-body::-webkit-scrollbar { display: none; }
+
+/* ── BOTTOM TAB BAR ── */
+#tabbar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: 64px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  display: flex;
+  z-index: 50;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 3px; cursor: pointer;
+  color: var(--muted); transition: color 0.2s;
+}
+.tab.on { color: var(--accent-color); }
+.tab-icon { font-size: 1.2rem; line-height: 1; }
+.tab-label { font-size: 0.56rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* ── PAGES ── */
+.page { display: none; }
+.page.on { display: block; }
+
+/* ── SECTION / AREA SYSTEM ── */
+.area {
+  margin: 0;
+  border-bottom: 1px solid var(--border);
+}
+.area-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 20px;
+  cursor: pointer;
+  user-select: none; -webkit-user-select: none;
+}
+.area-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent-color); flex-shrink: 0;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 20%, transparent);
+}
+.area-name { font-size: 0.9rem; font-weight: 600; flex: 1; }
+.area-meta { font-size: 0.68rem; color: var(--muted); }
+.area-chevron { font-size: 0.75rem; color: var(--muted2); transition: transform 0.2s; }
+.area.open .area-chevron { transform: rotate(90deg); }
+.area-body { display: none; }
+.area.open .area-body { display: block; }
+.area-progress { height: 2px; background: var(--border); margin: 0 20px; border-radius: 1px; overflow: hidden; }
+.area-progress-fill { height: 100%; background: var(--accent-color); border-radius: 1px; transition: width 0.3s; }
+
+/* ── SUB-SECTION ── */
+.subsection { border-top: 1px solid var(--border); }
+.subsection-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px 10px 32px;
+  cursor: pointer;
+}
+.sub-line { width: 2px; height: 16px; background: var(--border); border-radius: 1px; flex-shrink: 0; }
+.subsection.open .sub-line { background: var(--accent-color); }
+.sub-name { font-size: 0.8rem; font-weight: 500; color: var(--text2); flex: 1; }
+.subsection.open .sub-name { color: var(--text); }
+.sub-meta { font-size: 0.62rem; color: var(--muted2); }
+.sub-chevron { font-size: 0.65rem; color: var(--muted2); transition: transform 0.2s; }
+.subsection.open .sub-chevron { transform: rotate(90deg); }
+.subsection-body { display: none; padding: 0 0 4px; }
+.subsection.open .subsection-body { display: block; }
+
+/* ── HABIT ROW ── */
+.habit-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 20px 10px 44px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.habit-row:active { background: var(--surface); }
+.habit-row.done .habit-label { color: var(--muted); text-decoration: line-through; }
+.habit-check {
+  width: 20px; height: 20px; border-radius: 6px;
+  border: 1.5px solid var(--muted2); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; transition: all 0.15s;
+}
+.habit-row.done .habit-check { background: var(--green); border-color: var(--green); color: #000; }
+.habit-label { flex: 1; font-size: 0.82rem; font-weight: 400; }
+.habit-xp { font-size: 0.62rem; color: var(--accent-color); font-weight: 600; }
+.habit-del { font-size: 0.7rem; color: var(--muted2); padding: 4px; opacity: 0; transition: opacity 0.2s; }
+.habit-row:hover .habit-del { opacity: 1; }
+
+/* ── ADD ROWS ── */
+.add-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 20px 8px 44px;
+  cursor: pointer; color: var(--muted);
+  font-size: 0.75rem; font-weight: 500;
+  transition: color 0.15s;
+}
+.add-row:hover { color: var(--accent-color); }
+.add-area-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 20px;
+  cursor: pointer; color: var(--muted);
+  font-size: 0.78rem; font-weight: 500;
+  transition: color 0.15s;
+  border-bottom: 1px solid var(--border);
+}
+.add-area-row:hover { color: var(--accent-color); }
+
+/* ── QUEST / BOSS / SKILL / STATS cards ── */
+.section-pad { padding: 20px; }
+.page-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.02em; }
+
+.quest-card {
+  background: var(--surface); border-radius: var(--radius);
+  padding: 14px 16px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer; border: 1px solid var(--border);
+  transition: border-color 0.2s;
+}
+.quest-card:hover { border-color: var(--accent-color); }
+.quest-card.done { opacity: 0.45; pointer-events: none; }
+.quest-icon { font-size: 1.4rem; flex-shrink: 0; }
+.quest-info { flex: 1; }
+.quest-name { font-size: 0.85rem; font-weight: 600; margin-bottom: 2px; }
+.quest-desc { font-size: 0.7rem; color: var(--muted); }
+.quest-xp { font-size: 0.7rem; font-weight: 700; color: var(--accent-color); white-space: nowrap; }
+
+/* BOSS */
+.boss-card { background: var(--surface); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border); margin-bottom: 12px; text-align: center; }
+.boss-emoji { font-size: 4rem; display: block; margin: 0 auto 12px; line-height: 1; }
+.boss-name-txt { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.01em; }
+.boss-phase-txt { font-size: 0.72rem; color: var(--muted); margin-bottom: 14px; }
+.boss-hp-bar { height: 10px; background: var(--border); border-radius: 5px; overflow: hidden; margin-bottom: 4px; }
+.boss-hp-fill { height: 100%; background: linear-gradient(90deg, var(--red), #f87171); border-radius: 5px; transition: width 0.4s; }
+.boss-hp-nums { font-size: 0.65rem; color: var(--muted); margin-bottom: 14px; font-variant-numeric: tabular-nums; }
+.boss-taunt { background: var(--surface2); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.78rem; color: var(--text2); font-style: italic; margin-bottom: 6px; }
+
+/* SKILLS */
+.skill-row { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.skill-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; border: 1px solid var(--border); transition: border-color 0.2s; }
+.skill-row.active .skill-icon { border-color: var(--accent-color); background: color-mix(in srgb, var(--accent-color) 12%, transparent); }
+.skill-info { flex: 1; }
+.skill-name { font-size: 0.82rem; font-weight: 600; margin-bottom: 2px; }
+.skill-desc { font-size: 0.68rem; color: var(--muted); margin-bottom: 4px; }
+.skill-req { font-size: 0.64rem; color: var(--accent-color); font-weight: 500; }
+.skill-status { font-size: 0.62rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; white-space: nowrap; margin-top: 2px; }
+.skill-row.active .skill-status { background: var(--accent-color); color: #000; }
+.skill-row:not(.active) .skill-status { background: var(--surface2); color: var(--muted); }
+
+/* STATS */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.stat-tile { background: var(--surface); border-radius: var(--radius); padding: 14px; border: 1px solid var(--border); }
+.stat-num { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--accent-color); letter-spacing: -0.03em; }
+.stat-lbl { font-size: 0.64rem; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* RANK LIST */
+.rank-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.rank-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.rank-name-txt { flex: 1; font-size: 0.8rem; }
+.rank-lv { font-size: 0.65rem; color: var(--muted); }
+
+/* FOCUS */
+#focus-screen { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; }
+#focus-screen.on { display: flex; }
+#focus-label { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 8px; }
+#focus-time { font-family: 'Syne', sans-serif; font-size: 4.5rem; font-weight: 800; letter-spacing: -0.04em; margin: 16px 0; }
+.focus-ring-wrap { position: relative; width: 180px; height: 180px; }
+.focus-ring-wrap svg { transform: rotate(-90deg); }
+.frb { fill: none; stroke: var(--border); stroke-width: 6; }
+.frp { fill: none; stroke: var(--accent-color); stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+#f-time-inner { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; }
+.focus-btns { display: flex; gap: 10px; margin-top: 24px; }
+.f-btn { padding: 11px 28px; border-radius: 10px; border: none; font-size: 0.78rem; font-weight: 700; cursor: pointer; letter-spacing: 0.04em; font-family: 'Inter', sans-serif; }
+.f-btn.primary { background: var(--accent-color); color: #fff; }
+.f-btn.ghost { background: var(--surface); color: var(--text2); border: 1px solid var(--border); }
+
+/* SETTINGS */
+.settings-section { border-bottom: 1px solid var(--border); }
+.settings-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; }
+.settings-label { font-size: 0.85rem; font-weight: 500; }
+.settings-sub { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+.theme-dots { display: flex; gap: 8px; }
+.theme-dot { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.15s, border-color 0.15s; }
+.theme-dot.on { border-color: var(--text); transform: scale(1.15); }
+
+/* MODAL */
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 90; display: none; align-items: flex-end; }
+.modal-bg.on { display: flex; }
+.modal-sheet { background: var(--surface); border-radius: 20px 20px 0 0; padding: 20px; width: 100%; border-top: 1px solid var(--border); }
+.modal-title { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 800; margin-bottom: 14px; }
+.m-input { width: 100%; padding: 12px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 0.88rem; font-family: 'Inter', sans-serif; outline: none; margin-bottom: 10px; -webkit-user-select: text; user-select: text; }
+.m-input:focus { border-color: var(--accent-color); }
+.m-select { width: 100%; padding: 12px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 0.88rem; font-family: 'Inter', sans-serif; outline: none; margin-bottom: 10px; }
+.m-btns { display: flex; gap: 10px; }
+.m-btn { flex: 1; padding: 12px; border: none; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif; }
+.m-btn.ok { background: var(--accent-color); color: #fff; }
+.m-btn.no { background: var(--border); color: var(--text2); }
+
+/* XP FLOAT */
+@keyframes xpUp { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-50px) scale(1.2)} }
+.xpf { position: fixed; font-size: 0.9rem; font-weight: 700; color: var(--accent-color); pointer-events: none; animation: xpUp 1s ease-out forwards; z-index: 200; font-family: 'Syne', sans-serif; }
+/* LVL UP */
+@keyframes lvlAnim { 0%{opacity:0;transform:translate(-50%,-50%) scale(0.7)} 20%{opacity:1;transform:translate(-50%,-50%) scale(1.05)} 80%{opacity:1;transform:translate(-50%,-50%) scale(1)} 100%{opacity:0;transform:translate(-50%,-50%) scale(1)} }
+#lvlup { position: fixed; top: 50%; left: 50%; font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: var(--gold); text-align: center; pointer-events: none; display: none; z-index: 300; white-space: nowrap; }
+#lvlup.on { display: block; animation: lvlAnim 2s ease-out forwards; }
+</style>
+</head>
+<body class="">
+
+<!-- HEADER -->
+<div id="header">
+  <div id="hdr-left">
+    <div id="player-name">Hero</div>
+    <div id="hdr-sub">
+      <span>Lv <span id="lv-num">1</span></span>
+      <span>·</span>
+      <span id="rank-tag">Iron I</span>
+    </div>
+  </div>
+  <div id="hdr-right">
+    <div id="streak-pill"><span>🔥</span><span id="streak-num">0</span> day streak</div>
+    <div class="xp-strip"><div class="xp-strip-fill" id="xp-fill" style="width:0%"></div></div>
+    <div id="xp-label">0 / 100 XP</div>
+  </div>
+</div>
+
+<!-- SCROLL BODY -->
+<div id="scroll-body">
+
+  <!-- QUESTS -->
+  <div class="page on" id="pg-quests">
+    <div class="section-pad">
+      <div class="page-title">Daily Quests</div>
+      <div id="quest-list"><div class="quest-card" onclick="claimQuest(0)"><div class="quest-icon">💪</div><div class="quest-info"><div class="quest-name">Power Hour</div><div class="quest-desc">Complete 3 habits today</div></div><div class="quest-xp">+80 XP</div></div><div class="quest-card" onclick="claimQuest(1)"><div class="quest-icon">🔥</div><div class="quest-info"><div class="quest-name">Keep the Flame</div><div class="quest-desc">Maintain your daily streak</div></div><div class="quest-xp">+60 XP</div></div><div class="quest-card" onclick="claimQuest(2)"><div class="quest-icon">🧠</div><div class="quest-info"><div class="quest-name">Multi-Front War</div><div class="quest-desc">Complete habits in 2 different sections</div></div><div class="quest-xp">+90 XP</div></div></div>
+      <div style="margin-top:20px">
+        <div class="page-title" style="font-size:0.85rem;margin-bottom:12px">Focus Mode</div>
+        <div style="background:var(--surface);border-radius:var(--radius);padding:16px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:0.85rem;font-weight:600;margin-bottom:3px">Deep Work Session</div>
+            <div style="font-size:0.7rem;color:var(--muted)">25 min · +50 XP · 20 boss dmg</div>
+          </div>
+          <button onclick="openFocus()" style="padding:9px 18px;background:var(--accent-color);color:#fff;border:none;border-radius:var(--radius-sm);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:&#39;Inter&#39;,sans-serif">Start</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HABITS -->
+  <div class="page" id="pg-habits">
+    <div id="areas-container"></div>
+    <div class="add-area-row" onclick="openModal(&#39;m-area&#39;)">
+      <span style="font-size:1rem">+</span> Add Section
+    </div>
+  </div>
+
+  <!-- BOSS -->
+  <div class="page" id="pg-boss">
+    <div class="section-pad">
+      <div class="page-title">Weekly Boss</div>
+      <div id="boss-container"><div class="boss-card"><div class="boss-emoji">👹</div><div class="boss-name-txt">The Procrastination Demon</div><div class="boss-phase-txt">Phase 1 — The Temptation</div><div class="boss-hp-bar"><div class="boss-hp-fill" style="width:100%"></div></div><div class="boss-hp-nums">108 / 108 HP</div><div class="boss-taunt">"Just check your phone for a sec..."</div><div class="boss-taunt">"Rest today, grind tomorrow."</div><div style="font-size:0.68rem;color:var(--muted);margin-top:12px;line-height:1.6">Habit = 5 dmg &nbsp;·&nbsp; Quest = 15 dmg &nbsp;·&nbsp; Focus session = 20 dmg</div></div></div>
+    </div>
+  </div>
+
+  <!-- SKILLS -->
+  <div class="page" id="pg-skills">
+    <div class="section-pad">
+      <div class="page-title">Skill Tree</div>
+      <div id="skill-list"><div class="skill-row"><div class="skill-icon">⚡</div><div class="skill-info"><div class="skill-name">Quick Start</div><div class="skill-desc">First task of the day gives +50% XP</div><div class="skill-req">Complete 5 tasks total</div></div><div class="skill-status">Locked</div></div><div class="skill-row"><div class="skill-icon">🔥</div><div class="skill-info"><div class="skill-name">Streak Master</div><div class="skill-desc">Streak bonuses doubled</div><div class="skill-req">Reach a 7-day streak</div></div><div class="skill-status">Locked</div></div><div class="skill-row"><div class="skill-icon">🛡</div><div class="skill-info"><div class="skill-name">Iron Will</div><div class="skill-desc">Boss battle damage +25%</div><div class="skill-req">Complete 50 tasks total</div></div><div class="skill-status">Locked</div></div><div class="skill-row"><div class="skill-icon">⚔️</div><div class="skill-info"><div class="skill-name">Momentum</div><div class="skill-desc">Each habit after 3 consecutive gives +20 XP</div><div class="skill-req">Reach Level 5</div></div><div class="skill-status">Locked</div></div><div class="skill-row"><div class="skill-icon">🧘</div><div class="skill-info"><div class="skill-name">Focus Mastery</div><div class="skill-desc">Focus mode XP doubled</div><div class="skill-req">Complete 10 focus sessions</div></div><div class="skill-status">Locked</div></div><div class="skill-row"><div class="skill-icon">👑</div><div class="skill-info"><div class="skill-name">Champion</div><div class="skill-desc">All XP gains +30%</div><div class="skill-req">Reach Platinum rank (Lv 27)</div></div><div class="skill-status">Locked</div></div></div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="page" id="pg-stats">
+    <div class="section-pad">
+      <div class="page-title">Stats</div>
+      <div class="stats-grid" id="stats-grid"><div class="stat-tile"><div class="stat-num">0</div><div class="stat-lbl">Total XP</div></div><div class="stat-tile"><div class="stat-num">0</div><div class="stat-lbl">Best Streak</div></div><div class="stat-tile"><div class="stat-num">0</div><div class="stat-lbl">Tasks Done</div></div><div class="stat-tile"><div class="stat-num">0</div><div class="stat-lbl">Bosses Slain</div></div></div>
+      <div class="page-title" style="font-size:0.85rem;margin-bottom:10px">Rank Ladder</div>
+      <div id="rank-list"><div class="rank-row"><div class="rank-dot" style="background:var(--accent-color)"></div><div class="rank-name-txt" style="font-weight:600;color:var(--text)">Iron I</div><div class="rank-lv">Lv 1</div><div style="font-size:0.7rem;color:var(--accent-color)">✓</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Iron II</div><div class="rank-lv">Lv 3</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Bronze I</div><div class="rank-lv">Lv 5</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Bronze II</div><div class="rank-lv">Lv 8</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Silver I</div><div class="rank-lv">Lv 11</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Silver II</div><div class="rank-lv">Lv 14</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Gold I</div><div class="rank-lv">Lv 18</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Gold II</div><div class="rank-lv">Lv 22</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Platinum</div><div class="rank-lv">Lv 27</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Diamond</div><div class="rank-lv">Lv 33</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Master</div><div class="rank-lv">Lv 40</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Grandmaster</div><div class="rank-lv">Lv 48</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Legend</div><div class="rank-lv">Lv 57</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Mythic</div><div class="rank-lv">Lv 68</div></div><div class="rank-row"><div class="rank-dot" style="background:var(--border)"></div><div class="rank-name-txt" style="font-weight:400;color:var(--muted)">Eternal</div><div class="rank-lv">Lv 80</div></div></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="pg-settings">
+    <div class="settings-section">
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Player Name</div>
+          <input id="name-inp" class="m-input" style="margin:8px 0 0;width:200px" placeholder="Your name…">
+        </div>
+        <button onclick="saveName()" style="padding:9px 16px;background:var(--accent-color);color:#fff;border:none;border-radius:var(--radius-sm);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:&#39;Inter&#39;,sans-serif">Save</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Accent Colour</div>
+          <div class="settings-sub">Changes the highlight colour everywhere</div>
+        </div>
+      </div>
+      <div style="padding:0 20px 16px">
+        <div class="theme-dots" id="theme-dots">
+          <div class="theme-dot on" style="background:#6366f1" onclick="setTheme(&#39;&#39;)" title="Indigo"></div>
+          <div class="theme-dot" style="background:#f97316" onclick="setTheme(&#39;fire&#39;)" title="Fire"></div>
+          <div class="theme-dot" style="background:#22c55e" onclick="setTheme(&#39;green&#39;)" title="Green"></div>
+          <div class="theme-dot" style="background:#a855f7" onclick="setTheme(&#39;violet&#39;)" title="Violet"></div>
+          <div class="theme-dot" style="background:#f43f5e" onclick="setTheme(&#39;rose&#39;)" title="Rose"></div>
+          <div class="theme-dot" style="background:#0ea5e9" onclick="setTheme(&#39;sky&#39;)" title="Sky"></div>
+        </div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Reset Daily Habits</div>
+          <div class="settings-sub">Un-checks all habits. Keeps XP.</div>
+        </div>
+        <button onclick="resetDaily()" style="padding:9px 16px;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:&#39;Inter&#39;,sans-serif">Reset</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end scroll-body -->
+
+<!-- BOTTOM TAB BAR -->
+<div id="tabbar">
+  <div class="tab on" onclick="showTab(&#39;quests&#39;,this)">
+    <div class="tab-icon">⚡</div>
+    <div class="tab-label">Quests</div>
+  </div>
+  <div class="tab" onclick="showTab(&#39;habits&#39;,this)">
+    <div class="tab-icon">📋</div>
+    <div class="tab-label">Habits</div>
+  </div>
+  <div class="tab" onclick="showTab(&#39;boss&#39;,this)">
+    <div class="tab-icon">👹</div>
+    <div class="tab-label">Boss</div>
+  </div>
+  <div class="tab" onclick="showTab(&#39;skills&#39;,this)">
+    <div class="tab-icon">🌟</div>
+    <div class="tab-label">Skills</div>
+  </div>
+  <div class="tab" onclick="showTab(&#39;stats&#39;,this)">
+    <div class="tab-icon">📊</div>
+    <div class="tab-label">Stats</div>
+  </div>
+  <div class="tab" onclick="showTab(&#39;settings&#39;,this)">
+    <div class="tab-icon">⚙️</div>
+    <div class="tab-label">Settings</div>
+  </div>
+</div>
+
+<!-- FOCUS SCREEN -->
+<div id="focus-screen">
+  <div id="focus-label">Focus Mode</div>
+  <div class="focus-ring-wrap">
+    <svg width="180" height="180">
+      <circle class="frb" cx="90" cy="90" r="80"></circle>
+      <circle class="frp" id="frp" cx="90" cy="90" r="80" stroke-dasharray="502" stroke-dashoffset="0"></circle>
+    </svg>
+    <div id="f-time-inner">25:00</div>
+  </div>
+  <div id="focus-time">25:00</div>
+  <div style="font-size:0.72rem;color:var(--muted);margin-top:-10px;margin-bottom:20px">Complete your tasks. Stay locked in.</div>
+  <div class="focus-btns">
+    <button class="f-btn primary" id="f-start-btn" onclick="toggleFocus()">Start</button>
+    <button class="f-btn ghost" onclick="closeFocus()">Exit</button>
+  </div>
+</div>
+
+<!-- MODALS -->
+<!-- Add Area -->
+<div class="modal-bg" id="m-area">
+  <div class="modal-sheet">
+    <div class="modal-title">New Section</div>
+    <input class="m-input" id="area-name-inp" placeholder="e.g. Workout, School, Reading…">
+    <div class="m-btns">
+      <button class="m-btn no" onclick="closeModal(&#39;m-area&#39;)">Cancel</button>
+      <button class="m-btn ok" onclick="confirmArea()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Sub-section -->
+<div class="modal-bg" id="m-sub">
+  <div class="modal-sheet">
+    <div class="modal-title">New Sub-section</div>
+    <input class="m-input" id="sub-name-inp" placeholder="e.g. Strength, Cardio, Algebra…">
+    <div class="m-btns">
+      <button class="m-btn no" onclick="closeModal(&#39;m-sub&#39;)">Cancel</button>
+      <button class="m-btn ok" onclick="confirmSub()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Habit -->
+<div class="modal-bg" id="m-habit">
+  <div class="modal-sheet">
+    <div class="modal-title">New Habit</div>
+    <input class="m-input" id="hab-name-inp" placeholder="Habit name…">
+    <select class="m-select" id="hab-xp-inp">
+      <option value="10">Easy — 10 XP</option>
+      <option value="25" selected="">Medium — 25 XP</option>
+      <option value="50">Hard — 50 XP</option>
+      <option value="100">Epic — 100 XP</option>
+    </select>
+    <div class="m-btns">
+      <button class="m-btn no" onclick="closeModal(&#39;m-habit&#39;)">Cancel</button>
+      <button class="m-btn ok" onclick="confirmHabit()">Add</button>
+    </div>
+  </div>
+</div>
+
+<div id="lvlup"></div>
+
+<script>
+// ══════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════
+var S = {
+  name:'Hero', xp:0, level:1, totalXp:0,
+  streak:0, bestStreak:0, lastDate:'',
+  tasksDone:0, bossesSlain:0, focusSessions:0,
+  areas:[], skills:{}, theme:'',
+  dailyQuests:[], questsDate:'',
+  bossHp:100, bossMax:100, bossDefeated:false, bossWeek:'',
+};
+
+var XP_TABLE = [0,100,250,450,700,1000,1400,1900,2500,3200,4000,5000,6500,8000,10000,12500,15500,19000,23000,28000];
+var RANKS = [
+  {n:'Iron I',lv:1},{n:'Iron II',lv:3},{n:'Bronze I',lv:5},{n:'Bronze II',lv:8},
+  {n:'Silver I',lv:11},{n:'Silver II',lv:14},{n:'Gold I',lv:18},{n:'Gold II',lv:22},
+  {n:'Platinum',lv:27},{n:'Diamond',lv:33},{n:'Master',lv:40},{n:'Grandmaster',lv:48},
+  {n:'Legend',lv:57},{n:'Mythic',lv:68},{n:'Eternal',lv:80},
+];
+var SKILLS = [
+  {id:'qs', icon:'⚡', name:'Quick Start',    desc:'First task of the day gives +50% XP',        req:'Complete 5 tasks total',       check:function(){return S.tasksDone>=5;}},
+  {id:'sm', icon:'🔥', name:'Streak Master',  desc:'Streak bonuses doubled',                      req:'Reach a 7-day streak',         check:function(){return S.bestStreak>=7;}},
+  {id:'iw', icon:'🛡', name:'Iron Will',      desc:'Boss battle damage +25%',                    req:'Complete 50 tasks total',      check:function(){return S.tasksDone>=50;}},
+  {id:'mo', icon:'⚔️', name:'Momentum',       desc:'Each habit after 3 consecutive gives +20 XP',req:'Reach Level 5',                check:function(){return S.level>=5;}},
+  {id:'fm', icon:'🧘', name:'Focus Mastery',  desc:'Focus mode XP doubled',                      req:'Complete 10 focus sessions',   check:function(){return S.focusSessions>=10;}},
+  {id:'ch', icon:'👑', name:'Champion',        desc:'All XP gains +30%',                          req:'Reach Platinum rank (Lv 27)',  check:function(){return S.level>=27;}},
+];
+var QUEST_POOL = [
+  {icon:'💪', name:'Power Hour',       desc:'Complete 3 habits today',               type:'tasks3',  xp:80},
+  {icon:'⚡', name:'Lightning Round',  desc:'Complete any 2 habits',                 type:'tasks2',  xp:40},
+  {icon:'🎯', name:'Full Send',        desc:'Complete all habits in any section',     type:'fullsec', xp:120},
+  {icon:'🔥', name:'Keep the Flame',   desc:'Maintain your daily streak',             type:'streak',  xp:60},
+  {icon:'🗡', name:'Boss Damage',      desc:'Deal 20+ damage to the weekly boss',     type:'bossdmg', xp:100},
+  {icon:'🏆', name:'Perfectionist',    desc:'Complete 5 or more habits',              type:'tasks5',  xp:150},
+  {icon:'🧠', name:'Multi-Front War',  desc:'Complete habits in 2 different sections',type:'twosec',  xp:90},
+  {icon:'⏱', name:'Time Warrior',     desc:'Complete a focus session today',         type:'focus',   xp:70},
+];
+
+var pendingAreaIdx = null;
+var pendingSubIdx = null;
+var pendingHabitTarget = null; // {areaIdx, subIdx} or {areaIdx, subIdx:null}
+var focusRunning = false, focusTimer = null, focusSecs = 0;
+
+// ══════════════════════════════════════════
+// STORAGE
+// ══════════════════════════════════════════
+function save(){ try{ localStorage.setItem('lq2',JSON.stringify(S)); }catch(e){} }
+function load(){
+  try{
+    var d=localStorage.getItem('lq2');
+    if(d){ var p=JSON.parse(d); for(var k in p) S[k]=p[k]; }
+  }catch(e){}
+}
+
+// ══════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════
+window.onload = function(){
+  load();
+  checkDay();
+  checkBoss();
+  applyTheme(S.theme);
+  renderAll();
+  document.getElementById('name-inp').value = S.name;
+};
+
+function today(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function weekKey(){
+  var d=new Date(), day=d.getDay(), diff=d.getDate()-day+(day===0?-6:1);
+  var m=new Date(d.setDate(diff));
+  return m.getFullYear()+'-'+(m.getMonth()+1)+'-'+m.getDate();
+}
+
+function checkDay(){
+  var t=today();
+  if(S.lastDate && S.lastDate!==t){
+    var yd=new Date(); yd.setDate(yd.getDate()-1);
+    var y=yd.getFullYear()+'-'+(yd.getMonth()+1)+'-'+yd.getDate();
+    S.streak = (S.lastDate===y) ? S.streak+1 : 0;
+    if(S.streak>S.bestStreak) S.bestStreak=S.streak;
+    for(var i=0;i<S.areas.length;i++){
+      for(var j=0;j<S.areas[i].subs.length;j++)
+        for(var k=0;k<S.areas[i].subs[j].habits.length;k++) S.areas[i].subs[j].habits[k].done=false;
+      for(var k=0;k<S.areas[i].habits.length;k++) S.areas[i].habits[k].done=false;
+    }
+  }
+  if(S.lastDate!==t){ S.lastDate=t; genQuests(); }
+  save();
+}
+
+function checkBoss(){
+  var wk=weekKey();
+  if(S.bossWeek!==wk){
+    S.bossWeek=wk; S.bossDefeated=false;
+    S.bossMax=100+(S.level*8); S.bossHp=S.bossMax; save();
+  }
+}
+
+function genQuests(){
+  var pool=QUEST_POOL.slice(), chosen=[];
+  for(var i=0;i<3;i++){
+    var idx=Math.floor(Math.random()*pool.length);
+    var q=JSON.parse(JSON.stringify(pool.splice(idx,1)[0]));
+    q.done=false; chosen.push(q);
+  }
+  S.dailyQuests=chosen; save();
+}
+
+// ══════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════
+function renderAll(){ renderHeader(); renderQuests(); renderHabits(); renderBoss(); renderSkills(); renderStats(); }
+
+function renderHeader(){
+  document.getElementById('player-name').textContent=S.name;
+  document.getElementById('lv-num').textContent=S.level;
+  document.getElementById('rank-tag').textContent=getRank();
+  document.getElementById('streak-num').textContent=S.streak;
+  var cur=S.xp, base=xpBase(S.level), next=xpBase(S.level+1);
+  var pct=next>base ? Math.round((cur-base)/(next-base)*100) : 100;
+  document.getElementById('xp-fill').style.width=pct+'%';
+  document.getElementById('xp-label').textContent=(cur-base)+' / '+(next-base)+' XP';
+}
+
+function xpBase(l){ if(l<=1)return 0; if(l-1<XP_TABLE.length)return XP_TABLE[l-1]; return XP_TABLE[XP_TABLE.length-1]+(l-XP_TABLE.length)*3000; }
+function getRank(){ var r=RANKS[0].n; for(var i=0;i<RANKS.length;i++) if(S.level>=RANKS[i].lv) r=RANKS[i].n; return r; }
+
+function renderQuests(){
+  var c=document.getElementById('quest-list'); var h='';
+  if(!S.dailyQuests.length){ c.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:10px 0">No quests available.</div>'; return; }
+  for(var i=0;i<S.dailyQuests.length;i++){
+    var q=S.dailyQuests[i];
+    h+='<div class="quest-card'+(q.done?' done':'')+'" onclick="claimQuest('+i+')">'
+      +'<div class="quest-icon">'+q.icon+(q.done?' ✓':'')+'</div>'
+      +'<div class="quest-info"><div class="quest-name">'+q.name+'</div><div class="quest-desc">'+q.desc+'</div></div>'
+      +'<div class="quest-xp">+'+q.xp+' XP</div></div>';
+  }
+  c.innerHTML=h;
+}
+
+function renderHabits(){
+  var c=document.getElementById('areas-container'); var h='';
+  for(var ai=0;ai<S.areas.length;ai++){
+    var area=S.areas[ai];
+    var stats=areaStats(ai);
+    var isOpen=area.open;
+    h+='<div class="area'+(isOpen?' open':'')+'" id="area-'+ai+'">';
+    h+='<div class="area-header" onclick="toggleArea('+ai+')">'
+      +'<div class="area-dot"></div>'
+      +'<div class="area-name">'+area.name+'</div>'
+      +'<div class="area-meta">'+stats.done+'/'+stats.total+'</div>'
+      +'<div class="area-chevron">›</div></div>';
+    h+='<div class="area-progress"><div class="area-progress-fill" style="width:'+(stats.total?Math.round(stats.done/stats.total*100):0)+'%"></div></div>';
+    h+='<div class="area-body">';
+
+    // direct habits on area
+    for(var hi=0;hi<area.habits.length;hi++){
+      var hab=area.habits[hi];
+      h+='<div class="habit-row'+(hab.done?' done':'')+'" onclick="toggleHabit('+ai+',null,'+hi+')">'
+        +'<div class="habit-check">'+(hab.done?'✓':'')+'</div>'
+        +'<div class="habit-label">'+hab.name+'</div>'
+        +'<div class="habit-xp">+'+hab.xp+'</div>'
+        +'<div class="habit-del" onclick="delHabit(event,'+ai+',null,'+hi+')">✕</div></div>';
+    }
+
+    // sub-sections
+    for(var si=0;si<area.subs.length;si++){
+      var sub=area.subs[si]; var subStats=subSectionStats(ai,si);
+      var subOpen=sub.open;
+      h+='<div class="subsection'+(subOpen?' open':'')+'" id="sub-'+ai+'-'+si+'">';
+      h+='<div class="subsection-header" onclick="toggleSub('+ai+','+si+')">'
+        +'<div class="sub-line"></div>'
+        +'<div class="sub-name">'+sub.name+'</div>'
+        +'<div class="sub-meta">'+subStats.done+'/'+subStats.total+'</div>'
+        +'<div class="sub-chevron">›</div></div>';
+      h+='<div class="subsection-body">';
+      for(var hi=0;hi<sub.habits.length;hi++){
+        var hab=sub.habits[hi];
+        h+='<div class="habit-row'+(hab.done?' done':'')+'" onclick="toggleHabit('+ai+','+si+','+hi+')">'
+          +'<div class="habit-check">'+(hab.done?'✓':'')+'</div>'
+          +'<div class="habit-label">'+hab.name+'</div>'
+          +'<div class="habit-xp">+'+hab.xp+'</div>'
+          +'<div class="habit-del" onclick="delHabit(event,'+ai+','+si+','+hi+')">✕</div></div>';
+      }
+      h+='<div class="add-row" onclick="openAddHabit('+ai+','+si+')">+ Add habit</div>';
+      h+='</div></div>';
+    }
+
+    h+='<div class="add-row" onclick="openAddHabit('+ai+',null)">+ Add habit</div>';
+    h+='<div class="add-row" onclick="openAddSub('+ai+')">+ Add sub-section</div>';
+    h+='<div class="add-row" style="padding-left:20px;color:var(--red);font-size:0.7rem" onclick="delArea('+ai+')">Delete section</div>';
+    h+='</div></div>';
+  }
+  c.innerHTML=h;
+}
+
+function areaStats(ai){
+  var done=0,total=0; var area=S.areas[ai];
+  for(var i=0;i<area.habits.length;i++){ total++; if(area.habits[i].done) done++; }
+  for(var i=0;i<area.subs.length;i++) for(var j=0;j<area.subs[i].habits.length;j++){ total++; if(area.subs[i].habits[j].done) done++; }
+  return{done:done,total:total};
+}
+function subSectionStats(ai,si){
+  var done=0,total=0; var sub=S.areas[ai].subs[si];
+  for(var i=0;i<sub.habits.length;i++){ total++; if(sub.habits[i].done) done++; }
+  return{done:done,total:total};
+}
+
+function renderBoss(){
+  var c=document.getElementById('boss-container');
+  if(S.bossDefeated){
+    c.innerHTML='<div class="boss-card"><div class="boss-emoji">💀</div>'
+      +'<div class="boss-name-txt">Defeated!</div>'
+      +'<div class="boss-phase-txt">The Procrastination Demon fell this week.</div>'
+      +'<div style="background:color-mix(in srgb,var(--green) 10%,transparent);border:1px solid var(--green);border-radius:var(--radius-sm);padding:12px;font-size:0.82rem;color:var(--green);text-align:center;margin-top:12px">🏆 +500 XP rewarded</div></div>';
+    return;
+  }
+  var pct=Math.round(S.bossHp/S.bossMax*100);
+  var phase=pct>66?'Phase 1 — The Temptation':pct>33?'Phase 2 — The Spiral ⚠️':'Phase 3 — Final Form 💀';
+  var taunts=pct>66
+    ?['"Just check your phone for a sec..."','"Rest today, grind tomorrow."']
+    :pct>33
+    ?['"One more episode won\'t hurt."','"You\'re already behind, why bother?"']
+    :['"You\'ve already failed this week."','"Nothing you do matters."'];
+  var td=''; for(var i=0;i<taunts.length;i++) td+='<div class="boss-taunt">'+taunts[i]+'</div>';
+  c.innerHTML='<div class="boss-card">'
+    +'<div class="boss-emoji">👹</div>'
+    +'<div class="boss-name-txt">The Procrastination Demon</div>'
+    +'<div class="boss-phase-txt">'+phase+'</div>'
+    +'<div class="boss-hp-bar"><div class="boss-hp-fill" style="width:'+pct+'%"></div></div>'
+    +'<div class="boss-hp-nums">'+S.bossHp+' / '+S.bossMax+' HP</div>'
+    +td
+    +'<div style="font-size:0.68rem;color:var(--muted);margin-top:12px;line-height:1.6">Habit = 5 dmg &nbsp;·&nbsp; Quest = 15 dmg &nbsp;·&nbsp; Focus session = 20 dmg'
+    +(S.skills['iw']?'<br><span style="color:var(--accent-color)">Iron Will: +25% damage</span>':'')+'</div></div>';
+}
+
+function renderSkills(){
+  var c=document.getElementById('skill-list'); checkSkillUnlocks(); var h='';
+  for(var i=0;i<SKILLS.length;i++){
+    var sk=SKILLS[i]; var on=!!S.skills[sk.id];
+    h+='<div class="skill-row'+(on?' active':'')+'">'
+      +'<div class="skill-icon">'+sk.icon+'</div>'
+      +'<div class="skill-info"><div class="skill-name">'+sk.name+'</div>'
+      +'<div class="skill-desc">'+sk.desc+'</div>'
+      +'<div class="skill-req">'+sk.req+'</div></div>'
+      +'<div class="skill-status">'+(on?'Active':'Locked')+'</div></div>';
+  }
+  c.innerHTML=h;
+}
+
+function renderStats(){
+  document.getElementById('stats-grid').innerHTML=
+    statTile(S.totalXp,'Total XP')+statTile(S.bestStreak,'Best Streak')+
+    statTile(S.tasksDone,'Tasks Done')+statTile(S.bossesSlain,'Bosses Slain');
+  var h=''; for(var i=0;i<RANKS.length;i++){
+    var r=RANKS[i]; var reached=S.level>=r.lv;
+    h+='<div class="rank-row"><div class="rank-dot" style="background:'+(reached?'var(--accent-color)':'var(--border)')+'"></div>'
+      +'<div class="rank-name-txt" style="font-weight:'+(reached?600:400)+';color:'+(reached?'var(--text)':'var(--muted)')+'">'+r.n+'</div>'
+      +'<div class="rank-lv">Lv '+r.lv+'</div>'+(reached?'<div style="font-size:0.7rem;color:var(--accent-color)">✓</div>':'')+'</div>';
+  }
+  document.getElementById('rank-list').innerHTML=h;
+}
+function statTile(v,l){ return '<div class="stat-tile"><div class="stat-num">'+v+'</div><div class="stat-lbl">'+l+'</div></div>'; }
+
+// ══════════════════════════════════════════
+// XP
+// ══════════════════════════════════════════
+function gainXp(amt, ex, ey){
+  if(S.skills['ch']) amt=Math.round(amt*1.3);
+  var oldLv=S.level;
+  S.xp+=amt; S.totalXp+=amt;
+  while(S.xp>=xpBase(S.level+1)) S.level++;
+  if(S.level>oldLv) showLvlUp(S.level);
+  save(); renderHeader(); renderStats();
+  floatXp('+'+amt+' XP', ex, ey);
+}
+function floatXp(txt,x,y){
+  var el=document.createElement('div'); el.className='xpf'; el.textContent=txt;
+  el.style.left=(x||window.innerWidth/2-20)+'px'; el.style.top=(y||180)+'px';
+  document.body.appendChild(el); setTimeout(function(){el.remove();},1100);
+}
+function showLvlUp(lv){
+  var el=document.getElementById('lvlup'); el.textContent='Level Up!\nLevel '+lv;
+  el.style.whiteSpace='pre'; el.classList.add('on');
+  setTimeout(function(){el.classList.remove('on');},2200);
+}
+
+// ══════════════════════════════════════════
+// HABITS
+// ══════════════════════════════════════════
+function toggleHabit(ai, si, hi){
+  var hab = si!==null ? S.areas[ai].subs[si].habits[hi] : S.areas[ai].habits[hi];
+  if(hab.done) return;
+  hab.done=true; S.tasksDone++;
+  var dmg=5; if(S.skills['iw']) dmg=Math.round(dmg*1.25);
+  bossDmg(dmg);
+  var xp=hab.xp; if(S.skills['qs']&&S.tasksDone===1) xp=Math.round(xp*1.5);
+  gainXp(xp, event.clientX, event.clientY);
+  checkSkillUnlocks(); checkQuestAuto(); save(); renderHabits(); renderBoss();
+}
+function delHabit(e,ai,si,hi){
+  e.stopPropagation();
+  if(si!==null) S.areas[ai].subs[si].habits.splice(hi,1);
+  else S.areas[ai].habits.splice(hi,1);
+  save(); renderHabits();
+}
+function delArea(ai){
+  S.areas.splice(ai,1); save(); renderHabits();
+}
+function toggleArea(ai){ S.areas[ai].open=!S.areas[ai].open; save(); renderHabits(); }
+function toggleSub(ai,si){ S.areas[ai].subs[si].open=!S.areas[ai].subs[si].open; save(); renderHabits(); }
+
+// ══════════════════════════════════════════
+// QUESTS
+// ══════════════════════════════════════════
+function claimQuest(i){
+  var q=S.dailyQuests[i]; if(q.done) return;
+  if(!questMet(q)){ floatXp('Not yet!', event.clientX, event.clientY); return; }
+  q.done=true;
+  var dmg=15; if(S.skills['iw']) dmg=Math.round(dmg*1.25);
+  bossDmg(dmg);
+  gainXp(q.xp, event.clientX, event.clientY);
+  save(); renderQuests(); renderBoss();
+}
+function questMet(q){
+  var done=countDone();
+  if(q.type==='tasks2') return done>=2;
+  if(q.type==='tasks3') return done>=3;
+  if(q.type==='tasks5') return done>=5;
+  if(q.type==='streak') return S.streak>=1||done>=1;
+  if(q.type==='fullsec') return hasFullSection();
+  if(q.type==='bossdmg') return (S.bossMax-S.bossHp)>=20;
+  if(q.type==='twosec') return sectionsWithDone()>=2;
+  if(q.type==='focus') return S.focusSessions>0;
+  return true;
+}
+function checkQuestAuto(){ renderQuests(); }
+function countDone(){
+  var n=0;
+  for(var i=0;i<S.areas.length;i++){
+    for(var j=0;j<S.areas[i].habits.length;j++) if(S.areas[i].habits[j].done) n++;
+    for(var j=0;j<S.areas[i].subs.length;j++) for(var k=0;k<S.areas[i].subs[j].habits.length;k++) if(S.areas[i].subs[j].habits[k].done) n++;
+  }
+  return n;
+}
+function hasFullSection(){
+  for(var i=0;i<S.areas.length;i++){
+    var all=S.areas[i].habits.concat();
+    for(var j=0;j<S.areas[i].subs.length;j++) all=all.concat(S.areas[i].subs[j].habits);
+    if(all.length && all.every(function(h){return h.done;})) return true;
+  }
+  return false;
+}
+function sectionsWithDone(){
+  var n=0;
+  for(var i=0;i<S.areas.length;i++){
+    var any=S.areas[i].habits.some(function(h){return h.done;});
+    if(!any) for(var j=0;j<S.areas[i].subs.length;j++) if(S.areas[i].subs[j].habits.some(function(h){return h.done;})){any=true;break;}
+    if(any) n++;
+  }
+  return n;
+}
+
+// ══════════════════════════════════════════
+// BOSS
+// ══════════════════════════════════════════
+function bossDmg(d){
+  if(S.bossDefeated) return;
+  S.bossHp=Math.max(0,S.bossHp-d);
+  if(S.bossHp<=0){ S.bossDefeated=true; S.bossesSlain++; gainXp(500, window.innerWidth/2, 200); }
+  save();
+}
+
+// ══════════════════════════════════════════
+// SKILLS
+// ══════════════════════════════════════════
+function checkSkillUnlocks(){
+  var changed=false;
+  for(var i=0;i<SKILLS.length;i++){
+    var sk=SKILLS[i]; if(S.skills[sk.id]) continue;
+    if(sk.check()){ S.skills[sk.id]=true; changed=true; floatXp('🌟 Skill unlocked: '+sk.name, window.innerWidth/2-80, 250); }
+  }
+  if(changed){ save(); renderSkills(); }
+}
+
+// ══════════════════════════════════════════
+// FOCUS
+// ══════════════════════════════════════════
+function openFocus(){ document.getElementById('focus-screen').classList.add('on'); resetFocus(); }
+function closeFocus(){ document.getElementById('focus-screen').classList.remove('on'); if(focusTimer){clearInterval(focusTimer);focusTimer=null;} focusRunning=false; document.getElementById('f-start-btn').textContent='Start'; }
+function resetFocus(){ focusSecs=25*60; updateFocusUI(); }
+function toggleFocus(){
+  if(focusRunning){ clearInterval(focusTimer);focusTimer=null;focusRunning=false;document.getElementById('f-start-btn').textContent='Resume'; }
+  else{
+    focusRunning=true; document.getElementById('f-start-btn').textContent='Pause';
+    focusTimer=setInterval(function(){
+      focusSecs--;updateFocusUI();
+      if(focusSecs<=0){
+        clearInterval(focusTimer);focusTimer=null;focusRunning=false;
+        S.focusSessions++; var xp=S.skills['fm']?100:50;
+        bossDmg(20); gainXp(xp,window.innerWidth/2,300);
+        checkSkillUnlocks(); save();
+        document.getElementById('f-start-btn').textContent='Done ✓';
+      }
+    },1000);
+  }
+}
+function updateFocusUI(){
+  var m=Math.floor(focusSecs/60),s=focusSecs%60;
+  var t=(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+  document.getElementById('f-time-inner').textContent=t;
+  document.getElementById('focus-time').textContent=t;
+  var total=25*60, prog=focusSecs/total, circ=502;
+  document.getElementById('frp').style.strokeDashoffset=Math.round(circ*prog);
+}
+
+// ══════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════
+function openModal(id){ document.getElementById(id).classList.add('on'); setTimeout(function(){ var inp=document.querySelector('#'+id+' .m-input'); if(inp) inp.focus(); },120); }
+function closeModal(id){ document.getElementById(id).classList.remove('on'); }
+
+function openAddSub(ai){ pendingAreaIdx=ai; openModal('m-sub'); }
+function openAddHabit(ai,si){ pendingHabitTarget={ai:ai,si:si}; openModal('m-habit'); }
+
+function confirmArea(){
+  var n=document.getElementById('area-name-inp').value.trim(); if(!n) return;
+  S.areas.push({name:n,habits:[],subs:[],open:true});
+  document.getElementById('area-name-inp').value='';
+  closeModal('m-area'); save(); renderHabits();
+}
+function confirmSub(){
+  var n=document.getElementById('sub-name-inp').value.trim(); if(!n||pendingAreaIdx===null) return;
+  S.areas[pendingAreaIdx].subs.push({name:n,habits:[],open:true});
+  document.getElementById('sub-name-inp').value='';
+  closeModal('m-sub'); save(); renderHabits();
+}
+function confirmHabit(){
+  var n=document.getElementById('hab-name-inp').value.trim();
+  var xp=parseInt(document.getElementById('hab-xp-inp').value);
+  if(!n||!pendingHabitTarget) return;
+  var t=pendingHabitTarget;
+  if(t.si!==null) S.areas[t.ai].subs[t.si].habits.push({name:n,xp:xp,done:false});
+  else S.areas[t.ai].habits.push({name:n,xp:xp,done:false});
+  document.getElementById('hab-name-inp').value='';
+  closeModal('m-habit'); save(); renderHabits();
+}
+
+// close modals on bg click
+document.querySelectorAll('.modal-bg').forEach(function(el){
+  el.onclick=function(e){ if(e.target===this) this.classList.remove('on'); };
+});
+
+// ══════════════════════════════════════════
+// THEME / SETTINGS
+// ══════════════════════════════════════════
+var THEMES=['','fire','green','violet','rose','sky'];
+function setTheme(t){
+  var body=document.body; body.className='';
+  if(t) body.classList.add('t-'+t);
+  S.theme=t; save(); applyThemeDots(t);
+}
+function applyTheme(t){ var body=document.body; body.className=''; if(t) body.classList.add('t-'+t); applyThemeDots(t); }
+function applyThemeDots(t){
+  document.querySelectorAll('.theme-dot').forEach(function(el,i){ el.classList.toggle('on',THEMES[i]===t); });
+}
+function saveName(){
+  var n=document.getElementById('name-inp').value.trim();
+  if(n){ S.name=n; save(); renderHeader(); }
+}
+function resetDaily(){
+  for(var i=0;i<S.areas.length;i++){
+    for(var j=0;j<S.areas[i].habits.length;j++) S.areas[i].habits[j].done=false;
+    for(var j=0;j<S.areas[i].subs.length;j++) for(var k=0;k<S.areas[i].subs[j].habits.length;k++) S.areas[i].subs[j].habits[k].done=false;
+  }
+  save(); renderHabits();
+}
+
+// ══════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════
+function showTab(name, el){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('on');});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
+  document.getElementById('pg-'+name).classList.add('on');
+  el.classList.add('on');
+  document.getElementById('scroll-body').scrollTop=0;
+  if(name==='boss') renderBoss();
+  if(name==='skills') renderSkills();
+  if(name==='stats') renderStats();
+}
+</script>
+
+
+</body></html>
