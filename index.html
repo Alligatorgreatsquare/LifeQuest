@@ -34,11 +34,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 .nrg-pip.on{background:var(--gold)}
 
 /* NAV */
-#nav{flex-shrink:0;display:flex;border-top:1px solid var(--border);background:var(--bg);padding-bottom:env(safe-area-inset-bottom,0);overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;will-change:transform}
+#nav{flex-shrink:0;display:flex;border-top:1px solid var(--border);background:var(--bg);padding-bottom:env(safe-area-inset-bottom,0);overflow:hidden;will-change:transform}
 #nav::-webkit-scrollbar{display:none}
-.tab{flex:0 0 auto;min-width:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 8px 7px;gap:2px;cursor:pointer;-webkit-user-select:none;user-select:none;transition:opacity .15s}
-.tab .ti{font-size:16px;line-height:1}
-.tab .tl{font-size:8px;letter-spacing:.05em;color:var(--muted);text-transform:uppercase;transition:color .15s}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 2px 7px;gap:2px;cursor:pointer;-webkit-user-select:none;user-select:none;transition:opacity .15s;min-width:0}
+.tab .ti{font-size:15px;line-height:1}
+.tab .tl{font-size:7.5px;letter-spacing:.02em;color:var(--muted);text-transform:uppercase;transition:color .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .tab.on{opacity:1}.tab:not(.on){opacity:.45}
 .tab.on .tl{color:var(--accent)}
 
@@ -1648,23 +1648,25 @@ function confirmHabit(){
   closeModal('m-habit'); save(); renderHabits();
 }
 function openCalAddModal(){
-  // Build habit options for the select
   var allHabits=getAllHabitsFlat();
   var sel=document.getElementById('m-cal-habit-sel');
   if(sel){
-    sel.innerHTML='<option value="">-- Custom (type below) --</option>';
+    sel.innerHTML='<option value="">-- Custom task (type below) --</option>';
     allHabits.forEach(function(h){
       var opt=document.createElement('option');
       opt.value=h.id;
       opt.textContent=h.name+(h.areaName?' ('+h.areaName+')':'');
       sel.appendChild(opt);
     });
+    sel.value='';
   }
-  // Clear fields
-  document.getElementById('m-cal-name').value='';
+  var nameInp=document.getElementById('m-cal-name');
+  if(nameInp){ nameInp.value=''; nameInp.disabled=false; }
   var ti=document.getElementById('m-cal-time');
   if(ti) ti.value='08:00';
-  openModal('m-cal');
+  // Show modal directly (don't use openModal which clears inputs)
+  var modal=document.getElementById('m-cal');
+  if(modal){ modal.classList.add('on'); setTimeout(function(){ if(sel) sel.focus(); },120); }
 }
 
 function onCalHabitSelect(){
@@ -1702,11 +1704,13 @@ function confirmCal(){
     return;
   }
 
-  // Re-enable name input
-  var nameInp=document.getElementById('m-cal-name');
-  if(nameInp) nameInp.disabled=false;
-  if(sel) sel.value='';
-  closeModal('m-cal'); save(); renderCalendarView();
+  // Re-enable name input and reset
+  var nameInp2=document.getElementById('m-cal-name');
+  if(nameInp2){ nameInp2.disabled=false; nameInp2.value=''; }
+  if(sel){ sel.value=''; }
+  closeModal('m-cal');
+  save();
+  renderCalendarView();
 }
 
 function toggleArea(ai){ S.areas[ai].open=!S.areas[ai].open; save(); renderHabits(); }
