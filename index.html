@@ -77,8 +77,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 .area-label{flex:1;font-size:13px;font-weight:600}
 .area-stat{font-size:10px;color:var(--muted);font-weight:500}
 .area-pip{position:absolute;bottom:0;left:0;height:2px;background:var(--accent);transition:width .3s;border-radius:0 2px 2px 0}
-.area-del{font-size:11px;color:var(--muted2);padding:2px 5px;cursor:pointer;display:none}
-.area-hdr:hover .area-del{display:block}
+.area-del{font-size:13px;color:var(--muted2);padding:4px 8px;cursor:pointer;border-radius:6px;transition:color .15s,background .15s;flex-shrink:0}
+.area-del:hover{color:var(--red);background:rgba(239,68,68,.1)}
 .area-children{display:none;padding-left:12px;background:var(--surface);border:1px solid var(--border);border-top:0;border-radius:0 0 var(--r) var(--r);margin-bottom:4px}
 .area-block.open>.area-children{display:block}
 
@@ -88,8 +88,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 .sub-chev{font-size:8px;color:var(--muted);transition:transform .15s}
 .sub-block.open>.sub-hdr .sub-chev{transform:rotate(90deg)}
 .sub-label{flex:1;font-size:12px;font-weight:500;color:var(--text2)}
-.sub-del{font-size:10px;color:var(--muted2);padding:2px 4px;cursor:pointer;display:none}
-.sub-hdr:hover .sub-del{display:block}
+.sub-del{font-size:12px;color:var(--muted2);padding:4px 7px;cursor:pointer;border-radius:5px;transition:color .15s,background .15s;flex-shrink:0}
+.sub-del:hover{color:var(--red);background:rgba(239,68,68,.1)}
 .sub-children{display:none;padding-left:10px}
 .sub-block.open>.sub-children{display:block}
 
@@ -107,8 +107,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 .h-meta{font-size:10px;color:var(--muted);display:flex;gap:6px;margin-top:1px;flex-wrap:wrap}
 .h-xp{font-size:10px;font-weight:700;color:var(--accent);flex-shrink:0}
 .h-nrg{font-size:9px;color:var(--gold)}
-.h-del{font-size:10px;color:var(--muted2);padding:2px 4px;cursor:pointer;display:none;flex-shrink:0}
-.habit-row:hover .h-del{display:block}
+.h-del{font-size:12px;color:var(--muted2);padding:4px 7px;cursor:pointer;border-radius:5px;transition:color .15s,background .15s;flex-shrink:0}
+.h-del:hover{color:var(--red);background:rgba(239,68,68,.1)}
 .h-dmg{font-size:9px;color:var(--red)}
 
 .add-row{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:var(--rs);font-size:12px;color:var(--muted);cursor:pointer;transition:color .12s,background .1s;margin:2px 0}
@@ -1069,7 +1069,7 @@ function renderArea(area, ai){
     +'<span class="area-chev">▶</span>'
     +'<span class="area-label">'+area.name+typeTag+'</span>'
     +'<span class="area-stat">'+stats.done+'/'+stats.total+'</span>'
-    +'<span class="area-del" onclick="delArea(event,'+ai+')">✕</span>'
+    +'<span class="area-del" onclick="delArea(event,'+ai+')">🗑</span>'
     +'<div class="area-pip" style="width:'+pct+'%"></div></div>';
   h+='<div class="area-children">';
   for(var hi=0;hi<area.habits.length;hi++) h+=renderHabitRow(area.habits[hi],ai,-1,hi);
@@ -1714,10 +1714,23 @@ function confirmCal(){
 
 function toggleArea(ai){ S.areas[ai].open=!S.areas[ai].open; save(); renderHabits(); }
 function toggleSub(ai,si){ S.areas[ai].subs[si].open=!S.areas[ai].subs[si].open; save(); renderHabits(); }
-function delArea(e,ai){ e.stopPropagation(); S.areas.splice(ai,1); save(); renderHabits(); }
-function delSub(e,ai,si){ e.stopPropagation(); S.areas[ai].subs.splice(si,1); save(); renderHabits(); }
+function delArea(e,ai){
+  e.stopPropagation();
+  var name=S.areas[ai]?S.areas[ai].name:'this section';
+  if(!confirm('Delete "'+name+'" and all its habits?')) return;
+  S.areas.splice(ai,1); save(); renderHabits();
+}
+function delSub(e,ai,si){
+  e.stopPropagation();
+  var name=S.areas[ai]&&S.areas[ai].subs[si]?S.areas[ai].subs[si].name:'this sub-section';
+  if(!confirm('Delete "'+name+'" and all its habits?')) return;
+  S.areas[ai].subs.splice(si,1); save(); renderHabits();
+}
 function delHabit(e,ai,si,hi){
   e.stopPropagation();
+  var hab=si>=0?S.areas[ai].subs[si].habits[hi]:S.areas[ai].habits[hi];
+  var name=hab?hab.name:'this habit';
+  if(!confirm('Remove "'+name+'"?')) return;
   if(si>=0) S.areas[ai].subs[si].habits.splice(hi,1);
   else S.areas[ai].habits.splice(hi,1);
   save(); renderHabits();
