@@ -334,6 +334,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 .cal-add-habit-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);font-size:11px;font-weight:600;cursor:pointer;margin-top:6px;transition:opacity .15s}
 .cal-add-habit-btn:hover{opacity:.85}
 
+
+.toggle-wrap{cursor:pointer;padding:4px 0}
+.toggle-track{width:42px;height:24px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);position:relative;transition:background .2s}
+.toggle-track.on{background:var(--accent);border-color:var(--accent)}
+.toggle-thumb{width:18px;height:18px;border-radius:9px;background:#fff;position:absolute;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,0.3)}
+.toggle-track.on .toggle-thumb{transform:translateX(18px)}
 </style>
 </head>
 <body>
@@ -466,9 +472,29 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
     <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Manage your scheduled habits in the 📅 Calendar tab.</div>
     <div class="eyebrow" style="margin-top:4px">Character</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Customise your hero in the 🧙 Hero tab.</div>
+    <div class="eyebrow" style="margin-top:18px">Energy System</div>
+    <div class="set-row">
+      <div>
+        <div class="set-label">Enable energy ⚡</div>
+        <div class="set-sub">Easy tasks cost more energy than hard ones</div>
+      </div>
+      <div class="toggle-wrap" onclick="toggleEnergy()">
+        <div class="toggle-track" id="energy-toggle-track">
+          <div class="toggle-thumb" id="energy-toggle-thumb"></div>
+        </div>
+      </div>
+    </div>
+    <div id="energy-info-row" style="font-size:11px;color:var(--muted);padding:4px 0 8px;display:none">
+      Daily energy: <strong id="max-energy-display">20</strong> · Easy costs 4 · Medium 3 · Hard 2 · Epic 1
+    </div>
+
     <div class="eyebrow" style="margin-top:18px">Danger Zone</div>
+    <div class="set-row">
+      <div><div class="set-label">Clear calendar</div><div class="set-sub">Remove all scheduled habits</div></div>
+      <button class="btn-sm sec" onclick="clearCalendar()">Clear</button>
+    </div>
     <div class="set-row" style="border:none">
-      <div><div class="set-label">Reset daily habits</div><div class="set-sub">Keeps XP & progress</div></div>
+      <div><div class="set-label">Reset calendar habits</div><div class="set-sub">Un-tick today's calendar completions</div></div>
       <button class="btn-sm sec" onclick="resetDaily()">Reset</button>
     </div>
   </div>
@@ -569,10 +595,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
   <input class="m-input" id="m-habit-name" placeholder="Habit name…">
   <label class="m-label">Difficulty & XP</label>
   <select class="m-select" id="m-habit-diff">
-    <option value="easy">Easy — 10 XP, 1 energy, 5 boss dmg</option>
-    <option value="medium" selected>Medium — 25 XP, 2 energy, 10 boss dmg</option>
-    <option value="hard">Hard — 50 XP, 3 energy, 20 boss dmg</option>
-    <option value="epic">Epic — 100 XP, 4 energy, 35 boss dmg</option>
+    <option value="easy">Easy — 10 XP, 4 energy, 5 boss dmg</option>
+    <option value="medium" selected>Medium — 25 XP, 3 energy, 10 boss dmg</option>
+    <option value="hard">Hard — 50 XP, 2 energy, 20 boss dmg</option>
+    <option value="epic">Epic — 100 XP, 1 energy, 35 boss dmg</option>
     <option value="legendary">Legendary — 500+ XP, months to complete</option>
   </select>
   <div class="m-chk-row">
@@ -630,7 +656,7 @@ var S = {
   name:'Hero', xp:0, level:1, totalXp:0, gems:0,
   streak:0, bestStreak:0, lastDate:'',
   tasksDone:0, bossesSlain:0, focusSessions:0,
-  energy:10, maxEnergy:10, lastEnergyReset:'',
+  energy:10, maxEnergy:10, lastEnergyReset:'', energyEnabled:false,
   minDailyTasks:4, hygieneCount:0,
   routines:[], essentialHabitIds:[],
   areas:[], skills:{}, theme:'', avatar:'🧙',
@@ -707,7 +733,7 @@ function darkenHex(hex, amt){
 // ══════════════════════════════════════════
 // CONSTANTS
 // ══════════════════════════════════════════
-var XP_TABLE = [0,100,250,450,700,1000,1400,1900,2500,3200,4000,5000,6500,8000,10000,12500,15500,19000,23000,28000];
+var XP_TABLE = [0,500,1200,2200,3500,5500,8000,11500,16000,22000,29500,39000,51000,65000,82000,102000,126000,155000,190000,230000];
 var RANKS = [
   {n:'Iron I',lv:1},{n:'Iron II',lv:3},{n:'Bronze I',lv:5},{n:'Bronze II',lv:8},
   {n:'Silver I',lv:11},{n:'Silver II',lv:14},{n:'Gold I',lv:18},{n:'Gold II',lv:22},
@@ -716,7 +742,7 @@ var RANKS = [
 ];
 
 var DIFF_XP   = {easy:10, medium:25, hard:50, epic:100, legendary:500};
-var DIFF_NRG  = {easy:1,  medium:2,  hard:3,  epic:4,   legendary:0};
+var DIFF_NRG  = {easy:4,  medium:3,  hard:2,  epic:1,   legendary:0};
 var DIFF_DMG  = {easy:5,  medium:10, hard:20, epic:35,  legendary:60};
 var DIFF_GEMS = {easy:0,  medium:1,  hard:2,  epic:3,   legendary:10};
 
@@ -819,18 +845,18 @@ var BONUS_QUEST_POOL = [
 ];
 
 var SHOP_ITEMS = [
-  {id:'xpPotion',    ico:'🧪', name:'XP Potion',      desc:'Instantly grants +100 XP',             price:15, type:'item'},
-  {id:'bossBomb',    ico:'💣', name:'Boss Bomb',       desc:'Deals 30 damage to the weekly boss',   price:20, type:'item'},
-  {id:'streakShield',ico:'🛡', name:'Streak Shield',   desc:'Protects your streak for one day',     price:25, type:'item'},
-  {id:'xpPotion2',   ico:'⚗️', name:'Mega XP Potion', desc:'Grants +500 XP',                       price:60, type:'item'},
+  {id:'xpPotion',    ico:'🧪', name:'XP Potion',      desc:'Instantly grants +100 XP',             price:40,  type:'item'},
+  {id:'bossBomb',    ico:'💣', name:'Boss Bomb',       desc:'Deals 30 damage to the weekly boss',   price:55,  type:'item'},
+  {id:'streakShield',ico:'🛡', name:'Streak Shield',   desc:'Protects your streak for one day',     price:75,  type:'item'},
+  {id:'xpPotion2',   ico:'⚗️', name:'Mega XP Potion', desc:'Grants +500 XP',                       price:150, type:'item'},
 ];
 var SHOP_COSMETICS = [
-  {id:'c_wizard',   ico:'🧙', name:'Wizard',      desc:'Avatar cosmetic',  price:10},
-  {id:'c_knight',   ico:'🛡️', name:'Knight',      desc:'Avatar cosmetic',  price:10},
-  {id:'c_ninja',    ico:'🥷', name:'Ninja',       desc:'Avatar cosmetic',  price:15},
-  {id:'c_dragon',   ico:'🐉', name:'Dragon',      desc:'Rare cosmetic',    price:40, rare:true},
-  {id:'c_phoenix',  ico:'🔥', name:'Phoenix',     desc:'Rare cosmetic',    price:40, rare:true},
-  {id:'c_crown',    ico:'👑', name:'Crown',       desc:'Premium cosmetic', price:60, rare:true},
+  {id:'c_wizard',   ico:'🧙', name:'Wizard',      desc:'Avatar cosmetic',  price:30},
+  {id:'c_knight',   ico:'🛡️', name:'Knight',      desc:'Avatar cosmetic',  price:30},
+  {id:'c_ninja',    ico:'🥷', name:'Ninja',       desc:'Avatar cosmetic',  price:45},
+  {id:'c_dragon',   ico:'🐉', name:'Dragon',      desc:'Rare cosmetic',    price:120, rare:true},
+  {id:'c_phoenix',  ico:'🔥', name:'Phoenix',     desc:'Rare cosmetic',    price:120, rare:true},
+  {id:'c_crown',    ico:'👑', name:'Crown',       desc:'Premium cosmetic', price:180, rare:true},
 ];
 
 var AVATARS = ['🧙','🛡️','🥷','⚔️','🦸','🧝','🐉','🔥','👑','🌟','💎','🦄'];
@@ -866,6 +892,7 @@ function load(){
     if(!S.essentialHabitIds) S.essentialHabitIds=[];
     if(S.energy===undefined) S.energy=10;
     if(!S.maxEnergy) S.maxEnergy=10;
+    if(S.energyEnabled===undefined) S.energyEnabled=false;
   }catch(e){}
 }
 
@@ -923,16 +950,21 @@ function checkDay(){
       S.streakShieldActive=false;
       toast('Streak Shield saved your streak! 🛡','gold');
     }
-    // apply habit penalty for incomplete habits
-    applyIncompletePenalties();
-    // reset daily
-    S.areas.forEach(function(a){
-      a.habits.forEach(function(h){h.done=false;});
-      a.subs.forEach(function(s){s.habits.forEach(function(h){h.done=false;});});
+    // penalties only apply to calendar tasks now (not all habits)
+    // Only reset calendar-linked habit completions + calendar custom entries + routines
+    S.calEvents.forEach(function(e){
+      if(e.habitId){
+        S.areas.forEach(function(a){
+          a.habits.forEach(function(h){if(h.id===e.habitId)h.done=false;});
+          a.subs.forEach(function(s){s.habits.forEach(function(h){if(h.id===e.habitId)h.done=false;});});
+        });
+      } else { e.done=false; }
     });
+    S.routines.forEach(function(r){r.done=false;});
     S.consecutiveHabitsToday=0;
     S.currentBossDmgDealt=0;
-    // restore energy
+    // restore energy (scales with daily goal)
+    S.maxEnergy = 8 + (S.minDailyTasks||4)*3;
     S.energy=S.maxEnergy;
   }
   if(S.lastDate!==t){
@@ -941,7 +973,7 @@ function checkDay(){
     S.penaltiesApplied=[];
   }
   // energy reset
-  if(S.lastEnergyReset!==t){ S.energy=S.maxEnergy; S.lastEnergyReset=t; }
+  if(S.lastEnergyReset!==t){ S.maxEnergy=8+(S.minDailyTasks||4)*3; S.energy=S.maxEnergy; S.lastEnergyReset=t; }
   save();
 }
 
@@ -1083,18 +1115,27 @@ function renderHeader(){
   if(mult>1){ badge.textContent='🔥 '+mult+'×'; badge.style.display='inline-flex'; }
   else badge.style.display='none';
   // energy
-  document.getElementById('nrg-num').textContent=S.energy;
+  var energyRowEl=document.getElementById('energy-row');
+  if(energyRowEl) energyRowEl.style.display=S.energyEnabled?'flex':'none';
+  document.getElementById('nrg-num').textContent=S.energy+'/'+S.maxEnergy;
 }
 
 function renderPenaltyBanner(){
   var area=document.getElementById('penalty-banner-area'); if(!area) return;
-  var incomplete=[];
-  S.areas.forEach(function(a){
-    a.habits.forEach(function(h){ if(!h.done&&!h.isBad) incomplete.push(h.name); });
-    a.subs.forEach(function(s){ s.habits.forEach(function(h){ if(!h.done&&!h.isBad) incomplete.push(h.name); }); });
+  // Only flag calendar habits not yet done
+  var calIncomplete=[];
+  S.calEvents.filter(function(e){return !e.hidden;}).forEach(function(e){
+    var isDone=false;
+    if(e.habitId){
+      S.areas.forEach(function(a){
+        a.habits.forEach(function(h){if(h.id===e.habitId&&h.done)isDone=true;});
+        a.subs.forEach(function(s){s.habits.forEach(function(h){if(h.id===e.habitId&&h.done)isDone=true;});});
+      });
+    } else { isDone=!!e.done; }
+    if(!isDone) calIncomplete.push(e.name);
   });
-  if(incomplete.length===0){ area.innerHTML=''; return; }
-  area.innerHTML='<div class="penalty-banner">⚠️ '+incomplete.length+' habit'+(incomplete.length>1?'s':'')+' remaining today — complete them to avoid penalties!</div>';
+  if(calIncomplete.length===0){ area.innerHTML=''; return; }
+  area.innerHTML='<div class="penalty-banner">📅 '+calIncomplete.length+' calendar task'+(calIncomplete.length>1?'s':'')+' remaining today</div>';
 }
 
 function renderQuests(){
@@ -1406,11 +1447,11 @@ function toggleHabit(ai,si,hi){
   if(hab.done) return;
   var diff=hab.diff||'medium';
   var nrgCost=DIFF_NRG[diff];
-  if(S.energy<nrgCost){ toast('Not enough energy! Wait until tomorrow ⚡','warn'); return; }
+  if(S.energyEnabled && S.energy<nrgCost){ toast('Not enough energy! Wait until tomorrow ⚡','warn'); return; }
 
   hab.done=true;
   S.tasksDone++;
-  S.energy=Math.max(0,S.energy-nrgCost);
+  if(S.energyEnabled) S.energy=Math.max(0,S.energy-nrgCost);
   if(area.type==='hygiene') S.hygieneCount=(S.hygieneCount||0)+1;
   S.consecutiveHabitsToday++;
 
@@ -1560,11 +1601,19 @@ function claimQuest(i){
 }
 
 function claimBonusQuest(i){
-  var q=S.bonusQuests[i]; if(!q||q.done) return;
-  q.done=true;
-  gainXp(q.xp,undefined,undefined,true);
-  S.gems+=q.gems||0;
-  toast('+'+q.xp+' XP & +'+q.gems+' 💎 bonus quest!','gold');
+  var q=S.bonusQuests[i]; if(!q) return;
+  if(q.done){
+    // Uncheck — refund XP and gems
+    q.done=false;
+    spendXp(q.xp);
+    S.gems=Math.max(0,S.gems-(q.gems||0));
+    toast('Bonus quest unchecked','info');
+  } else {
+    q.done=true;
+    gainXp(q.xp,undefined,undefined,true);
+    S.gems+=q.gems||0;
+    toast('+'+q.xp+' XP — bonus quest done!','gold');
+  }
   save(); renderQuests();
 }
 
@@ -2149,20 +2198,13 @@ function getAreaTypeForHabit(habitId){
 }
 
 function renderCalendarView(){
-  // Sync: add habits not yet in calEvents
+  // Only keep events for habits that still exist (remove stale)
   var allHabits=getAllHabitsFlat();
-  allHabits.forEach(function(h){
-    var exists=S.calEvents.some(function(e){return e.habitId===h.id;});
-    if(!exists){
-      S.calEvents.push({habitId:h.id,name:h.name,time:'08:00',areaName:h.areaName,diff:h.diff||'medium',hidden:false,sectionType:h.sectionType||''});
-    }
-  });
-  // Remove stale (deleted habits), but keep custom entries (habitId===null)
   S.calEvents=S.calEvents.filter(function(e){
     if(e.habitId===null||e.habitId===undefined) return true;
     return allHabits.some(function(h){return h.id===e.habitId;});
   });
-  // Backfill sectionType for existing events
+  // Backfill sectionType
   S.calEvents.forEach(function(e){
     if(e.habitId&&!e.sectionType) e.sectionType=getAreaTypeForHabit(e.habitId);
   });
@@ -2504,6 +2546,75 @@ window.addEventListener('load', function(){
   renderSettings();
   renderDailyProgress();
 }, {once:true, capture:true});
+
+
+// ═══════════════════════════════════════════════════
+// ENERGY TOGGLE
+// ═══════════════════════════════════════════════════
+function toggleEnergy(){
+  S.energyEnabled = !S.energyEnabled;
+  if(S.energyEnabled){
+    S.maxEnergy = 8 + (S.minDailyTasks||4)*3;
+    S.energy = S.maxEnergy;
+  }
+  save();
+  renderEnergyToggle();
+  renderHeader();
+  toast(S.energyEnabled ? '⚡ Energy system ON' : '⚡ Energy system OFF');
+}
+
+function renderEnergyToggle(){
+  var track = document.getElementById('energy-toggle-track');
+  var info  = document.getElementById('energy-info-row');
+  var maxEl = document.getElementById('max-energy-display');
+  if(track) track.classList.toggle('on', !!S.energyEnabled);
+  if(info)  info.style.display = S.energyEnabled ? 'block' : 'none';
+  if(maxEl) maxEl.textContent = 8 + (S.minDailyTasks||4)*3;
+}
+
+// ═══════════════════════════════════════════════════
+// CLEAR CALENDAR
+// ═══════════════════════════════════════════════════
+function clearCalendar(){
+  if(!confirm('Remove all scheduled habits from the calendar? Your habit library stays intact.')) return;
+  S.calEvents = [];
+  save();
+  renderCalendarView();
+  toast('Calendar cleared');
+}
+
+// ═══════════════════════════════════════════════════
+// PATCH renderSettings to also render energy toggle
+// ═══════════════════════════════════════════════════
+var _origRenderSettings = renderSettings;
+renderSettings = function(){
+  _origRenderSettings();
+  renderEnergyToggle();
+  // Update energy info max
+  var maxEl = document.getElementById('max-energy-display');
+  if(maxEl) maxEl.textContent = 8 + (S.minDailyTasks||4)*3;
+};
+
+// ═══════════════════════════════════════════════════
+// PATCH changeMinTasks to also update energy max display
+// ═══════════════════════════════════════════════════
+var _origChangeMinTasks = changeMinTasks;
+changeMinTasks = function(delta){
+  _origChangeMinTasks(delta);
+  var maxEl = document.getElementById('max-energy-display');
+  if(maxEl) maxEl.textContent = 8 + (S.minDailyTasks||4)*3;
+  // If energy on, update energy to new max
+  if(S.energyEnabled){
+    S.maxEnergy = 8 + (S.minDailyTasks||4)*3;
+    // Don't lower current energy, just raise max
+    if(S.energy > S.maxEnergy) S.energy = S.maxEnergy;
+    save(); renderHeader();
+  }
+};
+
+// ═══════════════════════════════════════════════════
+// BONUS QUEST visual: show "(tap to undo)" when done
+// ═══════════════════════════════════════════════════
 
 </script>
 </body>
