@@ -310,6 +310,30 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 .cal-add-task-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--surface2);border:1px dashed var(--border);border-radius:var(--rs);margin-bottom:6px;cursor:pointer;color:var(--muted);font-size:12px;transition:color .15s,border-color .15s}
 .cal-add-task-row:hover{color:var(--accent);border-color:var(--accent)}
 .area-hdr-colored{border-left:3px solid var(--skill-color,var(--border))}
+
+.qty-btn{width:28px;height:28px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.qty-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.routine-item{display:flex;align-items:center;gap:9px;padding:9px 11px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:6px;cursor:pointer;transition:background .12s}
+.routine-item.done{opacity:.45}.routine-item.done .r-name{text-decoration:line-through}
+.routine-item.essential-item{border-color:rgba(251,191,36,.35);background:rgba(251,191,36,.05)}
+.r-check{width:17px;height:17px;border-radius:4px;border:1.5px solid var(--muted2);display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;transition:all .15s}
+.routine-item.done .r-check{background:var(--green);border-color:var(--green);color:#000}
+.r-name{flex:1;font-size:13px;font-weight:500}
+.r-essential-tag{font-size:9px;padding:1px 5px;border-radius:8px;background:rgba(251,191,36,.2);color:var(--gold);border:1px solid rgba(251,191,36,.3);font-weight:700}
+.r-del{font-size:12px;color:var(--muted2);padding:4px 7px;cursor:pointer;border-radius:5px;transition:color .15s,background .15s}
+.r-del:hover{color:var(--red);background:rgba(239,68,68,.1)}
+.essential-chip{display:inline-flex;align-items:center;gap:5px;padding:7px 11px;background:var(--surface);border:1px solid rgba(251,191,36,.3);border-radius:var(--rs);margin-bottom:6px;font-size:12px}
+.essential-chip .ess-name{flex:1;font-weight:500}
+.essential-chip .ess-remove{color:var(--muted2);cursor:pointer;padding:2px 5px;font-size:11px}
+.essential-chip .ess-remove:hover{color:var(--red)}
+.daily-progress-bar{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-bottom:4px}
+.daily-progress-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .4s cubic-bezier(.34,1.56,.64,1)}
+.daily-goal-row{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:12px}
+.daily-goal-row .dg-met{color:var(--green);font-weight:700}
+.habit-essential-star{color:var(--gold);font-size:11px;margin-left:3px}
+.cal-add-habit-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);font-size:11px;font-weight:600;cursor:pointer;margin-top:6px;transition:opacity .15s}
+.cal-add-habit-btn:hover{opacity:.85}
+
 </style>
 </head>
 <body>
@@ -337,6 +361,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 
   <!-- QUESTS -->
   <div class="view on" id="v-quests">
+    <div id="daily-progress-wrap">
+      <div class="daily-progress-bar"><div class="daily-progress-fill" id="daily-prog-fill" style="width:0%"></div></div>
+      <div class="daily-goal-row"><span id="daily-prog-label">0 / 4 tasks</span><span id="daily-prog-status"></span></div>
+    </div>
     <div class="eyebrow">Daily Quests</div>
     <div id="daily-quests"></div>
     <div class="eyebrow" style="margin-top:16px">Bonus Quests</div>
@@ -394,7 +422,33 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
   <!-- SETTINGS -->
   <div class="view" id="v-settings">
 
-    <div class="eyebrow" style="margin-top:14px">Name & Theme</div>
+    <div class="eyebrow">Daily Goals</div>
+    <div class="set-row">
+      <div>
+        <div class="set-label">Minimum daily tasks</div>
+        <div class="set-sub">You must complete at least this many</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="qty-btn" onclick="changeMinTasks(-1)">−</button>
+        <span id="min-tasks-num" style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;min-width:24px;text-align:center">4</span>
+        <button class="qty-btn" onclick="changeMinTasks(1)">＋</button>
+      </div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:16px">Daily Routine
+      <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:6px">resets each day</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Add habits here to be tracked daily. Separate from your main habit library.</div>
+    <div id="routine-list"></div>
+    <button class="btn-sm sec" style="margin-bottom:16px" onclick="openModal('m-routine')">＋ Add Routine Habit</button>
+
+    <div class="eyebrow" style="margin-top:4px">Essential Habits
+      <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:6px">must complete daily</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Mark habits from your library as essential — these count toward your minimum and are highlighted.</div>
+    <div id="essential-list"></div>
+
+    <div class="eyebrow" style="margin-top:16px">Name & Theme</div>
     <div class="set-row">
       <div><div class="set-label">Accent colour</div></div>
       <div class="dot-row">
@@ -422,7 +476,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
   <!-- CALENDAR -->
   <div class="view" id="v-calendar">
     <div class="eyebrow" id="cal-date-header">Today's Schedule</div>
-    <div id="cal-today"></div>
+    <button class="cal-add-habit-btn" onclick="openCalAddModal()">＋ Add Habit to Calendar</button>
+    <div id="cal-today" style="margin-top:10px"></div>
     <div id="cal-all-list"></div>
   </div>
 
@@ -492,6 +547,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
     <option value="discipline">⚡ Discipline</option>
     <option value="creativity">🎨 Creativity</option>
     <option value="health">❤️ Health / Nutrition</option>
+    <option value="hygiene">🚿 Hygiene</option>
   </select>
   <div class="m-row">
     <button class="m-cancel" onclick="closeModal('m-area')">Cancel</button>
@@ -544,6 +600,25 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
   </div>
 </div></div>
 
+<div class="mbg" id="m-routine"><div class="mbox">
+  <div class="m-title">Add Routine Habit</div>
+  <input class="m-input" id="m-routine-name" placeholder="e.g. Brush teeth, Make bed…">
+  <label class="m-label">Difficulty & XP</label>
+  <select class="m-select" id="m-routine-diff">
+    <option value="easy">Easy — 10 XP</option>
+    <option value="medium" selected>Medium — 25 XP</option>
+    <option value="hard">Hard — 50 XP</option>
+  </select>
+  <div class="m-chk-row">
+    <input type="checkbox" id="m-routine-essential" style="width:16px;height:16px">
+    <label for="m-routine-essential" style="font-size:12px;color:var(--text2)">Mark as <strong>essential</strong> (must complete daily)</label>
+  </div>
+  <div class="m-row">
+    <button class="m-cancel" onclick="closeModal('m-routine')">Cancel</button>
+    <button class="m-ok" onclick="confirmRoutine()">Add</button>
+  </div>
+</div></div>
+
 <div id="lvl-toast">LEVEL UP<br><span id="lvl-num" style="font-size:13px;opacity:.8"></span></div>
 <div id="rank-toast">🏅 RANK UP!<br><span id="rank-new" style="font-size:14px;opacity:.9"></span></div>
 
@@ -556,6 +631,8 @@ var S = {
   streak:0, bestStreak:0, lastDate:'',
   tasksDone:0, bossesSlain:0, focusSessions:0,
   energy:10, maxEnergy:10, lastEnergyReset:'',
+  minDailyTasks:4, hygieneCount:0,
+  routines:[], essentialHabitIds:[],
   areas:[], skills:{}, theme:'', avatar:'🧙',
   dailyQuests:[], questsDate:'',
   bonusQuests:[], bonusQuestsDate:'',
@@ -658,6 +735,7 @@ var SKILL_COLOURS = {
   discipline:   {bg:'#431407', border:'#fb923c', text:'#fdba74', dot:'#fb923c'},
   creativity:   {bg:'#0c4a6e', border:'#38bdf8', text:'#7dd3fc', dot:'#38bdf8'},
   health:       {bg:'#064e3b', border:'#34d399', text:'#6ee7b7', dot:'#34d399'},
+  hygiene:      {bg:'#0f2744', border:'#7dd3fc', text:'#bae6fd', dot:'#7dd3fc'},
 };
 
 
@@ -668,6 +746,7 @@ var SKILLS = [
   {id:'mo', ico:'⚔️', name:'Momentum',      desc:'+20 XP after 3 habits in a row',         req:'Reach Level 5',        chk:function(){return S.level>=5;}},
   {id:'fm', ico:'🧘', name:'Focus Mastery', desc:'Focus XP doubled',                       req:'10 focus sessions',    chk:function(){return S.focusSessions>=10;}},
   {id:'ch', ico:'👑', name:'Champion',      desc:'All XP gains +30%',                      req:'Reach Platinum (27)',  chk:function(){return S.level>=27;}},
+  {id:'hy', ico:'🚿', name:'Hygiene Habit',  desc:'Daily hygiene tasks give +15% XP',       req:'Complete 20 hygiene tasks', chk:function(){return (S.hygieneCount||0)>=20;}},
 ];
 
 var ACHIEVEMENTS = [
@@ -781,6 +860,10 @@ function load(){
     if(!S.avatar) S.avatar='🧙';
     if(!S.charSkin) S.charSkin='s1';
     if(!S.skinTone) S.skinTone='s1';
+    if(!S.minDailyTasks) S.minDailyTasks=4;
+    if(!S.hygieneCount) S.hygieneCount=0;
+    if(!S.routines) S.routines=[];
+    if(!S.essentialHabitIds) S.essentialHabitIds=[];
     if(S.energy===undefined) S.energy=10;
     if(!S.maxEnergy) S.maxEnergy=10;
   }catch(e){}
@@ -1328,6 +1411,7 @@ function toggleHabit(ai,si,hi){
   hab.done=true;
   S.tasksDone++;
   S.energy=Math.max(0,S.energy-nrgCost);
+  if(area.type==='hygiene') S.hygieneCount=(S.hygieneCount||0)+1;
   S.consecutiveHabitsToday++;
 
   // animate
@@ -2163,6 +2247,263 @@ function removeCalHabit(idx){
 
 // Direct extensions (no patching needed)
 // renderCharacter and renderCalendarView are called directly in go() and renderAll()
+
+
+// ═══════════════════════════════════════════════════
+// ROUTINE SYSTEM
+// ═══════════════════════════════════════════════════
+function confirmRoutine(){
+  var name = document.getElementById('m-routine-name').value.trim();
+  var diff = document.getElementById('m-routine-diff').value;
+  var essential = document.getElementById('m-routine-essential').checked;
+  if(!name) return;
+  var id = 'r' + Date.now();
+  S.routines.push({id:id, name:name, diff:diff, done:false, essential:essential});
+  if(essential) S.essentialHabitIds.push(id);
+  closeModal('m-routine');
+  save();
+  renderSettings();
+}
+
+function toggleRoutine(id){
+  var r = S.routines.find(function(x){return x.id===id;});
+  if(!r || r.done) return;
+  r.done = true;
+  S.tasksDone++;
+  if(r.essential) S.hygieneCount = (S.hygieneCount||0) + (r.diff==='hard'?2:1);
+  var xp = {easy:10,medium:25,hard:50}[r.diff||'medium'] || 25;
+  if(S.skills['hy'] && r.essential) xp = Math.round(xp * 1.15);
+  gainXp(xp);
+  bossDmg({easy:5,medium:10,hard:20}[r.diff||'medium'] || 10);
+  checkSkillUnlocks(); checkAchievements();
+  save(); renderSettings(); renderDailyProgress();
+  toast('+'+xp+' XP — routine done!');
+}
+
+function delRoutine(id){
+  var r = S.routines.find(function(x){return x.id===id;});
+  if(!confirm('Remove "' + (r?r.name:'this routine') + '"?')) return;
+  S.routines = S.routines.filter(function(x){return x.id!==id;});
+  S.essentialHabitIds = S.essentialHabitIds.filter(function(x){return x!==id;});
+  save(); renderSettings();
+}
+
+function renderSettings(){
+  // Routine list
+  var rl = document.getElementById('routine-list');
+  if(rl){
+    if(!S.routines.length){
+      rl.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:4px 0 8px">No routines yet. Add daily habits like brushing teeth, making your bed, etc.</div>';
+    } else {
+      var routineIds = [];
+      var h = '';
+      S.routines.forEach(function(r, ri){
+        var isEss = S.essentialHabitIds.indexOf(r.id) >= 0;
+        routineIds.push(r.id);
+        h += '<div class="routine-item'+(r.done?' done':'')+(isEss?' essential-item':'')+'" onclick="toggleRoutineIdx('+ri+')">'
+          + '<div class="r-check">'+(r.done?'✓':'')+'</div>'
+          + '<div class="r-name">'+r.name+(isEss?'<span class="habit-essential-star">★</span>':'')+'</div>'
+          + (isEss?'<span class="r-essential-tag">ESSENTIAL</span>':'')
+          + '<div style="font-size:10px;color:var(--muted);margin:0 4px">'+r.diff+'</div>'
+          + '<div class="r-del" onclick="event.stopPropagation();delRoutineIdx('+ri+')" style="flex-shrink:0">✕</div>'
+          + '</div>';
+      });
+      window._routineIds = routineIds;
+      rl.innerHTML = h;
+    }
+  }
+
+  // Essential habits from main library
+  var el = document.getElementById('essential-list');
+  if(el){
+    // Show all habits with an option to mark as essential
+    var allH = [];
+    S.areas.forEach(function(a){
+      a.habits.forEach(function(h){ allH.push({id:h.id,name:h.name,area:a.name}); });
+      a.subs.forEach(function(s){ s.habits.forEach(function(h){ allH.push({id:h.id,name:h.name,area:a.name+'/'+s.name}); }); });
+    });
+    if(!allH.length){
+      el.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:4px 0">Add habits in the Habits tab first, then mark them essential here.</div>';
+    } else {
+      var h = '';
+      allH.forEach(function(habit){
+        var isEss = S.essentialHabitIds.indexOf(habit.id) >= 0;
+        var essIdx = allH.indexOf(habit);
+        h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface);border:1px solid '+(isEss?'rgba(251,191,36,.3)':'var(--border)')+';border-radius:var(--rs);margin-bottom:5px">'
+          + '<span style="font-size:13px;flex:1;font-weight:'+(isEss?'600':'400')+'">'+habit.name+' <span style="font-size:10px;color:var(--muted)">'+habit.area+'</span></span>'
+          + '<button onclick="toggleEssentialIdx('+essIdx+')" style="padding:4px 10px;background:'+(isEss?'rgba(251,191,36,.2)':'var(--surface2)')+';border:1px solid '+(isEss?'rgba(251,191,36,.4)':'var(--border)')+';border-radius:6px;color:'+(isEss?'var(--gold)':'var(--muted)')+';font-size:10px;font-weight:700;cursor:pointer">'+(isEss?'★ Essential':'☆ Mark')+'</button>'
+          + '</div>';
+      });
+      window._essentialAllH = allH;
+      el.innerHTML = h;
+    }
+  }
+
+  // Min tasks display
+  var mn = document.getElementById('min-tasks-num');
+  if(mn) mn.textContent = S.minDailyTasks || 4;
+}
+
+function toggleRoutineIdx(i){
+  var id = window._routineIds && window._routineIds[i];
+  if(id) toggleRoutine(id);
+}
+function delRoutineIdx(i){
+  var id = window._routineIds && window._routineIds[i];
+  if(id) delRoutine(id);
+}
+function toggleEssentialIdx(i){
+  var h = window._essentialAllH && window._essentialAllH[i];
+  if(h) toggleEssential(h.id);
+}
+function toggleEssential(id){
+  var idx = S.essentialHabitIds.indexOf(id);
+  if(idx >= 0) S.essentialHabitIds.splice(idx, 1);
+  else S.essentialHabitIds.push(id);
+  save(); renderSettings();
+}
+
+function changeMinTasks(delta){
+  var n = (S.minDailyTasks || 4) + delta;
+  if(n < 1) n = 1;
+  if(n > 20) n = 20;
+  S.minDailyTasks = n;
+  save();
+  var mn = document.getElementById('min-tasks-num');
+  if(mn) mn.textContent = n;
+  renderDailyProgress();
+}
+
+// ═══════════════════════════════════════════════════
+// DAILY PROGRESS BAR
+// ═══════════════════════════════════════════════════
+function renderDailyProgress(){
+  var fill = document.getElementById('daily-prog-fill');
+  var label = document.getElementById('daily-prog-label');
+  var status = document.getElementById('daily-prog-status');
+  if(!fill) return;
+
+  // Count: calendar tasks done + routines done + essential habits done
+  var calDone = 0;
+  S.calEvents.filter(function(e){return !e.hidden;}).forEach(function(e){
+    if(!e.habitId) { if(e.done) calDone++; return; }
+    S.areas.forEach(function(a){
+      a.habits.forEach(function(h){ if(h.id===e.habitId&&h.done) calDone++; });
+      a.subs.forEach(function(s){ s.habits.forEach(function(h){ if(h.id===e.habitId&&h.done) calDone++; }); });
+    });
+  });
+  var routineDone = S.routines.filter(function(r){return r.done;}).length;
+  var essentialDone = S.essentialHabitIds.filter(function(id){
+    // check routines
+    var r = S.routines.find(function(x){return x.id===id;});
+    if(r) return r.done;
+    // check main habits
+    var found = false;
+    S.areas.forEach(function(a){
+      a.habits.forEach(function(h){if(h.id===id&&h.done)found=true;});
+      a.subs.forEach(function(s){s.habits.forEach(function(h){if(h.id===id&&h.done)found=true;});});
+    });
+    return found;
+  }).length;
+
+  var totalDone = calDone + routineDone;
+  // Essential habits that aren't in calendar also count
+  S.essentialHabitIds.forEach(function(id){
+    var inCal = S.calEvents.some(function(e){return e.habitId===id&&!e.hidden;});
+    if(!inCal){
+      var r = S.routines.find(function(x){return x.id===id;});
+      if(r&&r.done) return; // already counted in routineDone
+      S.areas.forEach(function(a){
+        a.habits.forEach(function(h){if(h.id===id&&h.done)totalDone++;});
+        a.subs.forEach(function(s){s.habits.forEach(function(h){if(h.id===id&&h.done)totalDone++;});});
+      });
+    }
+  });
+
+  var min = S.minDailyTasks || 4;
+  var pct = Math.min(100, Math.round(totalDone / min * 100));
+  fill.style.width = pct + '%';
+  fill.style.background = pct >= 100 ? 'var(--green)' : 'var(--accent)';
+
+  if(label) label.textContent = totalDone + ' / ' + min + ' tasks';
+  if(status){
+    if(pct >= 100) status.textContent = '✓ Goal met!';
+    else status.textContent = (min - totalDone) + ' to go';
+    status.className = pct >= 100 ? 'dg-met' : '';
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// CALENDAR — track done state for custom entries
+// ═══════════════════════════════════════════════════
+function toggleCalCustom(idx){
+  var e = S.calEvents[idx];
+  if(!e || e.habitId) return; // habit-linked ones are toggled via toggleHabit
+  e.done = !e.done;
+  save(); renderCalendarView(); renderDailyProgress();
+}
+
+// ═══════════════════════════════════════════════════
+// DAILY RESET — also reset routines and cal custom done
+// ═══════════════════════════════════════════════════
+var _origResetDaily = resetDaily;
+resetDaily = function(){
+  _origResetDaily();
+  S.routines.forEach(function(r){ r.done = false; });
+  S.calEvents.forEach(function(e){ if(e.done) e.done = false; });
+  save(); renderSettings(); renderDailyProgress();
+};
+
+// Also reset routines on new day (patch checkDay)
+var _origCheckDay = checkDay;
+checkDay = function(){
+  _origCheckDay();
+  // Reset routines if new day
+  S.routines.forEach(function(r){ if(r.done) r.done = false; });
+  S.calEvents.forEach(function(e){ if(e.habitId===null&&e.done) e.done = false; });
+};
+
+// ═══════════════════════════════════════════════════
+// PATCH renderAll and go() to include new renders
+// ═══════════════════════════════════════════════════
+var _origRenderAllBase = renderAll;
+renderAll = function(){
+  _origRenderAllBase();
+  renderSettings();
+  renderDailyProgress();
+};
+
+var _origGoBase = go;
+go = function(name, tab){
+  _origGoBase(name, tab);
+  if(name === 'settings') renderSettings();
+  if(name === 'quests') renderDailyProgress();
+};
+
+// ═══════════════════════════════════════════════════
+// PATCH toggleHabit to update daily progress
+// ═══════════════════════════════════════════════════
+var _origToggleHabit = toggleHabit;
+toggleHabit = function(ai, si, hi){
+  _origToggleHabit(ai, si, hi);
+  renderDailyProgress();
+};
+
+// ═══════════════════════════════════════════════════
+// PATCH renderCalendarView to mark essential habits
+// and show custom-entry toggle
+// ═══════════════════════════════════════════════════
+var _origRenderCalendarView = renderCalendarView;
+renderCalendarView = function(){
+  _origRenderCalendarView();
+  renderDailyProgress();
+};
+
+// Call on first load
+window.addEventListener('load', function(){
+  renderSettings();
+  renderDailyProgress();
+}, {once:true, capture:true});
 
 </script>
 </body>
