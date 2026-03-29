@@ -340,6 +340,49 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 .toggle-track.on{background:var(--accent);border-color:var(--accent)}
 .toggle-thumb{width:18px;height:18px;border-radius:9px;background:#fff;position:absolute;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,0.3)}
 .toggle-track.on .toggle-thumb{transform:translateX(18px)}
+
+/* PRIORITY */
+.pri-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle;flex-shrink:0}
+.pri-high{background:#ef4444}.pri-med{background:#f59e0b}.pri-low{background:#22c55e}
+.pri-btn.sel{transform:scale(1.08);filter:brightness(1.3)}
+
+/* UNDO TOAST */
+.undo-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 18px;font-size:12px;display:flex;align-items:center;gap:10px;z-index:250;box-shadow:0 4px 20px rgba(0,0,0,0.3);animation:tin .2s ease}
+.undo-btn{color:var(--accent);font-weight:700;cursor:pointer;font-size:12px;padding:2px 8px;border-radius:6px;background:var(--accent-dim,rgba(99,102,241,.1));border:1px solid var(--accent)}
+
+/* MOOD */
+.mood-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.mood-btn{padding:10px 6px;border-radius:10px;background:var(--surface);border:1px solid var(--border);text-align:center;cursor:pointer;transition:border-color .15s,background .15s;font-size:11px;font-weight:600}
+.mood-btn.sel{border-color:var(--accent);background:var(--accent-dim,rgba(99,102,241,.08))}
+.mood-icon{font-size:1.6rem;display:block;margin-bottom:4px}
+
+/* SEASONAL */
+body.xmas{--accent:#22c55e;--bg:#0d1a0e;--surface:#111f13;--surface2:#162019}
+body.birthday{--accent:#f472b6;--bg:#1a0d16;--surface:#1f1018;--surface2:#261320}
+
+/* MAP */
+#map-canvas{width:100%;height:100%;display:block}
+.map-filter-btn{padding:4px 10px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .15s}
+.map-filter-btn.on{background:var(--accent-dim,rgba(99,102,241,.1));border-color:var(--accent);color:var(--accent)}
+
+/* DASHBOARD */
+.dash-section{margin-bottom:20px}
+.dash-title{font-family:'Syne',sans-serif;font-size:.85rem;font-weight:800;margin-bottom:10px;letter-spacing:-.01em}
+.dash-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.dash-tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;text-align:center}
+.dash-big{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--accent)}
+.dash-lbl{font-size:10px;color:var(--text2);margin-top:2px;text-transform:uppercase;letter-spacing:.06em}
+.dash-streak-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:6px}
+.dash-streak-fill{height:100%;border-radius:2px;background:var(--gold)}
+.activity-row{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+.activity-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* FOCUS HABIT SELECT */
+.focus-hab-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);margin-bottom:6px;cursor:pointer;transition:border-color .15s,background .15s}
+.focus-hab-item.sel{border-color:var(--accent);background:rgba(99,102,241,.08)}
+.fh-check{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--muted2);flex-shrink:0;transition:all .15s;display:flex;align-items:center;justify-content:center;font-size:9px}
+.focus-hab-item.sel .fh-check{background:var(--accent);border-color:var(--accent);color:#000}
+
 </style>
 </head>
 <body>
@@ -526,24 +569,60 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
     <div id="char-class-list"></div>
   </div>
 
+
+  <!-- MAP -->
+  <div class="view" id="v-map">
+    <div class="eyebrow">Habit Map</div>
+    <div id="map-filters" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
+    <div id="map-canvas-wrap" style="position:relative;width:100%;height:420px;background:var(--surface);border-radius:var(--r);border:1px solid var(--border);overflow:hidden;touch-action:none">
+      <canvas id="map-canvas"></canvas>
+      <div id="map-tooltip" style="position:absolute;display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;pointer-events:none;z-index:10;max-width:160px;line-height:1.5"></div>
+    </div>
+    <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:6px">Pinch to zoom · drag to pan · tap bubble for details</div>
+  </div>
+
+  <!-- MOOD -->
+  <div class="view" id="v-mood">
+    <div class="eyebrow">How are you feeling?</div>
+    <div id="mood-picker"></div>
+    <div class="eyebrow" style="margin-top:16px">Mood-based Quests</div>
+    <div id="mood-quests"></div>
+    <div class="eyebrow" style="margin-top:16px">Suggested Habits</div>
+    <div id="mood-suggestions"></div>
+    <div class="eyebrow" style="margin-top:16px">Side Quests</div>
+    <div id="side-quests-list"></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="view" id="v-dashboard">
+    <div id="dashboard-content"></div>
+  </div>
+
 </div>
 
 <!-- NAV -->
 <div id="nav">
   <div class="tab on" onclick="go('quests',this)"><div class="ti">⚔️</div><div class="tl">Quests</div></div>
   <div class="tab" onclick="go('habits',this)"><div class="ti">☰</div><div class="tl">Habits</div></div>
-  <div class="tab" onclick="go('calendar',this)"><div class="ti">📅</div><div class="tl">Calendar</div></div>
+  <div class="tab" onclick="go('calendar',this)"><div class="ti">📅</div><div class="tl">Cal</div></div>
+  <div class="tab" onclick="go('map',this)"><div class="ti">🗺</div><div class="tl">Map</div></div>
+  <div class="tab" onclick="go('mood',this)"><div class="ti">🎭</div><div class="tl">Mood</div></div>
   <div class="tab" onclick="go('character',this)"><div class="ti">🧙</div><div class="tl">Hero</div></div>
   <div class="tab" onclick="go('boss',this)"><div class="ti">👹</div><div class="tl">Boss</div></div>
   <div class="tab" onclick="go('skills',this)"><div class="ti">✦</div><div class="tl">Skills</div></div>
   <div class="tab" onclick="go('stats',this)"><div class="ti">◈</div><div class="tl">Stats</div></div>
   <div class="tab" onclick="go('shop',this)"><div class="ti">💎</div><div class="tl">Shop</div></div>
+  <div class="tab" onclick="go('dashboard',this)"><div class="ti">📊</div><div class="tl">Dash</div></div>
   <div class="tab" onclick="go('settings',this)"><div class="ti">◎</div><div class="tl">Config</div></div>
 </div>
 
 <!-- FOCUS SCREEN -->
 <div id="focus-screen">
   <div id="f-label">Focus Mode</div>
+  <div id="f-habit-select" style="width:100%;max-width:320px;margin-bottom:16px;display:none">
+    <div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Focus on (optional)</div>
+    <div id="f-habit-list" style="max-height:140px;overflow-y:auto"></div>
+  </div>
   <div id="f-ring">
     <svg width="180" height="180">
       <circle class="f-bg" cx="90" cy="90" r="80"/>
@@ -553,6 +632,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
   </div>
   <div style="font-size:12px;color:var(--text2);margin-bottom:24px">Lock in. Earn XP. Damage the boss.</div>
   <div class="f-btns">
+    <button class="f-btn out" onclick="toggleFocusHabitSelect()" style="font-size:10px">🎯 Select</button>
     <button class="f-btn go" id="f-start-btn" onclick="toggleFocus()">Start</button>
     <button class="f-btn out" onclick="closeFocus()">Exit</button>
   </div>
@@ -601,6 +681,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
     <option value="epic">Epic — 100 XP, 1 energy, 35 boss dmg</option>
     <option value="legendary">Legendary — 500+ XP, months to complete</option>
   </select>
+  <label class="m-label">Priority</label>
+  <div style="display:flex;gap:8px;margin-bottom:10px">
+    <button type="button" class="pri-btn" data-pri="low"   onclick="selectPriority('low')"   style="flex:1;padding:8px;border-radius:7px;border:1.5px solid #22c55e;background:rgba(34,197,94,.1);color:#22c55e;font-size:12px;font-weight:600;cursor:pointer">🟢 Low</button>
+    <button type="button" class="pri-btn" data-pri="med"   onclick="selectPriority('med')"   style="flex:1;padding:8px;border-radius:7px;border:1.5px solid #f59e0b;background:rgba(245,158,11,.1);color:#f59e0b;font-size:12px;font-weight:600;cursor:pointer">🟡 Med</button>
+    <button type="button" class="pri-btn" data-pri="high"  onclick="selectPriority('high')"  style="flex:1;padding:8px;border-radius:7px;border:1.5px solid #ef4444;background:rgba(239,68,68,.1);color:#ef4444;font-size:12px;font-weight:600;cursor:pointer">🔴 High</button>
+  </div>
+  <input type="hidden" id="m-habit-priority" value="low">
   <div class="m-chk-row">
     <input type="checkbox" id="m-habit-bad" style="width:16px;height:16px">
     <label for="m-habit-bad" style="font-size:12px;color:var(--text2)">This is a <strong>bad habit</strong> (penalty if broken)</label>
@@ -673,6 +760,13 @@ var S = {
   ownedCosmetics:[],
   currentBossDmgDealt:0,
   streakShieldActive:false,
+  undoStack:[],
+  mood:'',
+  moodHistory:[],
+  sideQuestsDate:'', sideQuests:[],
+  funXp:0,
+  focusHabitIds:[],
+  mapFilters:{category:'',priority:'',todayOnly:false},
 };
 
 // ── Character constants — must be defined before renderAll ──
@@ -773,6 +867,7 @@ var SKILLS = [
   {id:'fm', ico:'🧘', name:'Focus Mastery', desc:'Focus XP doubled',                       req:'10 focus sessions',    chk:function(){return S.focusSessions>=10;}},
   {id:'ch', ico:'👑', name:'Champion',      desc:'All XP gains +30%',                      req:'Reach Platinum (27)',  chk:function(){return S.level>=27;}},
   {id:'hy', ico:'🚿', name:'Hygiene Habit',  desc:'Daily hygiene tasks give +15% XP',       req:'Complete 20 hygiene tasks', chk:function(){return (S.hygieneCount||0)>=20;}},
+  {id:'fn', ico:'🎈', name:'Fun Champion',   desc:'Side quests give +25% XP',               req:'Complete 10 side quests',   chk:function(){return (S.funXp||0)>=10;}},
 ];
 
 var ACHIEVEMENTS = [
@@ -886,6 +981,13 @@ function load(){
     if(!S.avatar) S.avatar='🧙';
     if(!S.charSkin) S.charSkin='s1';
     if(!S.skinTone) S.skinTone='s1';
+    if(!S.undoStack) S.undoStack=[];
+    if(!S.mood) S.mood='';
+    if(!S.moodHistory) S.moodHistory=[];
+    if(!S.sideQuestsDate) S.sideQuestsDate='';
+    if(!S.sideQuests) S.sideQuests=[];
+    if(S.funXp===undefined) S.funXp=0;
+    if(!S.focusHabitIds) S.focusHabitIds=[];
     if(!S.minDailyTasks) S.minDailyTasks=4;
     if(!S.hygieneCount) S.hygieneCount=0;
     if(!S.routines) S.routines=[];
@@ -1187,7 +1289,8 @@ function renderArea(area, ai){
   var stats=areaStats(ai);
   var pct=stats.total?Math.round(stats.done/stats.total*100):0;
   var sc=area.type&&SKILL_COLOURS[area.type]?SKILL_COLOURS[area.type]:null;
-  var typeTag=sc?'<span class="skill-chip" style="background:'+sc.bg+';border-color:'+sc.border+';color:'+sc.text+'"><span class="cal-skill-dot" style="background:'+sc.dot+'"></span>'+SECTION_SKILL[area.type].replace(/^[^ ]+ /,'')+'</span>':'';
+  var _stLabel=(area.type&&SECTION_SKILL[area.type])?SECTION_SKILL[area.type].replace(/^[^ ]+ /,''):(area.type||'');
+  var typeTag=sc?'<span class="skill-chip" style="background:'+sc.bg+';border-color:'+sc.border+';color:'+sc.text+'"><span class="cal-skill-dot" style="background:'+sc.dot+'"></span>'+_stLabel+'</span>':'';
   var h='<div class="area-block'+(area.open?' open':'')+'" id="area-'+ai+'">';
   h+='<div class="area-hdr'+(area.open?' open-header':'')+' area-hdr-colored" style="--skill-color:'+(sc?sc.border:'var(--border)')+'" onclick="toggleArea('+ai+')">'
     +'<span class="area-chev">▶</span>'
@@ -1773,7 +1876,8 @@ function confirmHabit(){
   var name=document.getElementById('m-habit-name').value.trim(); if(!name||!pendingHabitTarget) return;
   var diff=document.getElementById('m-habit-diff').value;
   var isBad=document.getElementById('m-habit-bad').checked;
-  var hab={id:uid(),name:name,diff:diff,isBad:isBad,done:false};
+  var pri=document.getElementById('m-habit-priority').value||'low';
+  var hab={id:uid(),name:name,diff:diff,isBad:isBad,done:false,priority:pri};
   var ai=pendingHabitTarget.ai, si=pendingHabitTarget.si;
   if(si>=0) S.areas[ai].subs[si].habits.push(hab);
   else S.areas[ai].habits.push(hab);
@@ -2403,6 +2507,641 @@ window.addEventListener('load',function(){
   if(!S._essOpenSections) S._essOpenSections={};
   renderSettings(); renderDailyProgress(); renderEnergyToggle();
 },{once:true,capture:true});
+
+// ═══════════════════════════════════════════════════
+// PRIORITY HELPERS
+// ═══════════════════════════════════════════════════
+function priDot(p){
+  var c={high:'#ef4444',med:'#f59e0b',low:'#22c55e'}[p||'low']||'#22c55e';
+  return '<span class="pri-dot" style="background:'+c+'"></span>';
+}
+function selectPriority(p){
+  document.getElementById('m-habit-priority').value=p;
+  document.querySelectorAll('.pri-btn').forEach(function(b){
+    b.classList.toggle('sel', b.getAttribute('data-pri')===p);
+    b.style.opacity = b.getAttribute('data-pri')===p ? '1' : '0.55';
+  });
+}
+// Reset priority buttons when modal opens
+var _origOpenModal = openModal;
+openModal = function(id){
+  _origOpenModal(id);
+  if(id==='m-habit'){
+    setTimeout(function(){
+      selectPriority('low');
+      var el=document.getElementById('m-habit-priority');
+      if(el) el.value='low';
+    },50);
+  }
+};
+
+// ═══════════════════════════════════════════════════
+// UNDO SYSTEM
+// ═══════════════════════════════════════════════════
+var _undoTimer=null;
+function pushUndo(label, undoFn){
+  S.undoStack=[{label:label,fn:undoFn}];
+  showUndoToast(label);
+}
+function showUndoToast(label){
+  var old=document.getElementById('undo-toast-el');
+  if(old) old.remove();
+  if(_undoTimer) clearTimeout(_undoTimer);
+  var el=document.createElement('div');
+  el.id='undo-toast-el';
+  el.className='undo-toast';
+  el.innerHTML='<span>'+label+'</span><span class="undo-btn" onclick="doUndo()">UNDO</span>';
+  document.body.appendChild(el);
+  _undoTimer=setTimeout(function(){if(el.parentNode)el.remove();},5000);
+}
+function doUndo(){
+  var old=document.getElementById('undo-toast-el');
+  if(old)old.remove();
+  if(_undoTimer){clearTimeout(_undoTimer);_undoTimer=null;}
+  if(S.undoStack&&S.undoStack.length){
+    var op=S.undoStack.pop();
+    if(op&&op.fn) op.fn();
+    save(); renderHabits(); toast('Undone ↩');
+  }
+}
+
+// Patch delArea/delSub/delHabit to push undo
+var _origDelArea=delArea;
+delArea=function(e,ai){
+  var saved=JSON.parse(JSON.stringify(S.areas[ai]));
+  var idx=ai;
+  _origDelArea(e,ai);
+  if(saved) pushUndo('Deleted section "'+saved.name+'"', function(){
+    S.areas.splice(idx,0,saved); renderHabits();
+  });
+};
+var _origDelSub=delSub;
+delSub=function(e,ai,si){
+  var saved=JSON.parse(JSON.stringify(S.areas[ai].subs[si]));
+  _origDelSub(e,ai,si);
+  if(saved) pushUndo('Deleted sub-section "'+saved.name+'"', function(){
+    S.areas[ai].subs.splice(si,0,saved); renderHabits();
+  });
+};
+var _origDelHabit=delHabit;
+delHabit=function(e,ai,si,hi){
+  var arr=si>=0?S.areas[ai].subs[si].habits:S.areas[ai].habits;
+  var saved=JSON.parse(JSON.stringify(arr[hi]));
+  _origDelHabit(e,ai,si,hi);
+  if(saved) pushUndo('Deleted habit "'+saved.name+'"', function(){
+    var a2=si>=0?S.areas[ai].subs[si].habits:S.areas[ai].habits;
+    a2.splice(hi,0,saved); renderHabits();
+  });
+};
+
+// ═══════════════════════════════════════════════════
+// SEASONAL THEMES
+// ═══════════════════════════════════════════════════
+function checkSeasonal(){
+  var d=new Date();
+  var mon=d.getMonth()+1, day=d.getDate();
+  // Christmas: Nov 25 – Dec 25
+  if((mon===11&&day>=25)||(mon===12&&day<=25)){
+    document.body.classList.add('xmas');
+    showSeasonalBanner('🎄 Christmas season! Special theme active.');
+  }
+  // Birthday: Sep 25
+  if(mon===9&&day===25){
+    document.body.classList.add('birthday');
+    showSeasonalBanner('🎂 Happy Birthday! Birthday theme active!');
+  }
+}
+function showSeasonalBanner(msg){
+  if(sessionStorage.getItem('seasonal_shown')) return;
+  sessionStorage.setItem('seasonal_shown','1');
+  toast(msg,'gold');
+}
+
+// ═══════════════════════════════════════════════════
+// MOOD SYSTEM
+// ═══════════════════════════════════════════════════
+var MOODS=[
+  {id:'happy',     icon:'😄', label:'Happy'},
+  {id:'motivated', icon:'💪', label:'Motivated'},
+  {id:'calm',      icon:'😌', label:'Calm'},
+  {id:'focused',   icon:'🎯', label:'Focused'},
+  {id:'bored',     icon:'😐', label:'Bored'},
+  {id:'tired',     icon:'😴', label:'Tired'},
+  {id:'sad',       icon:'😢', label:'Sad'},
+  {id:'angry',     icon:'😤', label:'Angry'},
+  {id:'nostalgic', icon:'🌅', label:'Nostalgic'},
+  {id:'burnt_out', icon:'🔥', label:'Burnt Out'},
+  {id:'anxious',   icon:'😰', label:'Anxious'},
+  {id:'excited',   icon:'🤩', label:'Excited'},
+];
+
+var MOOD_QUESTS={
+  happy:     [{n:'Reach out to a friend',x:60},{n:'Start something you\'ve been putting off',x:80},{n:'Write 3 things you\'re grateful for',x:40}],
+  motivated: [{n:'Tackle your hardest task first',x:100},{n:'Set 3 goals for the week',x:60},{n:'Work out harder than usual',x:80}],
+  calm:      [{n:'Read for 20 minutes',x:40},{n:'Meditate for 10 minutes',x:50},{n:'Write in a journal',x:40}],
+  focused:   [{n:'Deep work: 45 min, no distractions',x:100},{n:'Learn something new today',x:70},{n:'Review your weekly goals',x:50}],
+  bored:     [{n:'Try something you\'ve never done',x:80},{n:'Clean one space in your home',x:50},{n:'Learn a random interesting fact',x:30}],
+  tired:     [{n:'Take a 20-min power nap',x:30},{n:'Drink a glass of water',x:20},{n:'Do 5 minutes of light stretching',x:30}],
+  sad:       [{n:'Call someone who lifts you up',x:60},{n:'Go for a short walk outside',x:50},{n:'Do one small thing for yourself',x:40}],
+  angry:     [{n:'Do 20 minutes of exercise',x:70},{n:'Write out what\'s bothering you',x:50},{n:'Take 10 deep slow breaths',x:30}],
+  nostalgic: [{n:'Look at old photos or memories',x:40},{n:'Listen to music from your past',x:30},{n:'Write about a favourite memory',x:50}],
+  burnt_out: [{n:'Take a complete break for 1 hour',x:40},{n:'Do only ONE important thing today',x:60},{n:'Sleep early tonight',x:50}],
+  anxious:   [{n:'Write down your worries, then close the list',x:50},{n:'Focus on 1 thing at a time',x:60},{n:'Do a grounding exercise',x:40}],
+  excited:   [{n:'Channel excitement into a project',x:90},{n:'Share your excitement with someone',x:40},{n:'Start something new!',x:70}],
+};
+
+var SIDE_QUESTS_POOL=[
+  {icon:'🎲',name:'Roll the Dice',desc:'Do something completely spontaneous today',xp:80},
+  {icon:'📸',name:'Memory Maker',desc:'Take a photo of something beautiful you see today',xp:50},
+  {icon:'🎵',name:'New Sounds',desc:'Listen to an album you\'ve never heard before',xp:60},
+  {icon:'🌳',name:'Into the Wild',desc:'Spend 15 minutes in nature',xp:70},
+  {icon:'🍳',name:'Chef Mode',desc:'Cook a meal you\'ve never made before',xp:90},
+  {icon:'✉️',name:'Old School',desc:'Write a letter or message to someone you haven\'t spoken to',xp:80},
+  {icon:'🧩',name:'Brain Teaser',desc:'Solve a puzzle or do a crossword',xp:60},
+  {icon:'🎨',name:'Creative Splash',desc:'Draw, paint or doodle for 10 minutes',xp:70},
+  {icon:'🏃',name:'Spontaneous Sprint',desc:'Go for an unplanned run or walk',xp:60},
+  {icon:'📖',name:'Random Page',desc:'Open a book to a random page and read',xp:40},
+  {icon:'🌙',name:'Stargazer',desc:'Spend 5 minutes looking at the sky tonight',xp:50},
+  {icon:'🎯',name:'Bull\'s Eye',desc:'Complete one task perfectly today',xp:100},
+];
+
+function renderMoodView(){
+  // Mood picker
+  var mp=document.getElementById('mood-picker');
+  if(!mp) return;
+  var h='<div class="mood-grid">';
+  MOODS.forEach(function(m){
+    h+='<div class="mood-btn'+(S.mood===m.id?' sel':'')+'" onclick="setMood(\''+m.id+'\')">'
+      +'<span class="mood-icon">'+m.icon+'</span>'+m.label+'</div>';
+  });
+  h+='</div>';
+  mp.innerHTML=h;
+
+  // Mood quests
+  var mq=document.getElementById('mood-quests');
+  if(mq){
+    if(!S.mood){ mq.innerHTML='<div style="font-size:12px;color:var(--muted)">Select a mood to see personalised quests.</div>'; }
+    else{
+      var quests=MOOD_QUESTS[S.mood]||[];
+      var h2='';
+      quests.forEach(function(q,i){
+        h2+='<div class="qcard" style="cursor:default">'
+          +'<div class="qi">'+MOODS.find(function(m){return m.id===S.mood;}).icon+'</div>'
+          +'<div class="qinfo"><div class="qn">'+q.n+'</div><div class="qd">Mood quest</div></div>'
+          +'<div class="qxp">+'+q.x+' XP</div></div>';
+      });
+      mq.innerHTML=h2;
+    }
+  }
+
+  // Habit suggestions based on mood + history
+  var ms=document.getElementById('mood-suggestions');
+  if(ms){
+    var suggestions=getSuggestions();
+    if(!suggestions.length){ ms.innerHTML='<div style="font-size:12px;color:var(--muted)">Complete more habits to get personalised suggestions.</div>'; }
+    else{
+      var h3='';
+      suggestions.forEach(function(s){
+        h3+='<div style="padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:6px;font-size:12px">'
+          +'<div style="font-weight:600">'+s.icon+' '+s.name+'</div>'
+          +'<div style="font-size:11px;color:var(--muted);margin-top:2px">'+s.reason+'</div></div>';
+      });
+      ms.innerHTML=h3;
+    }
+  }
+
+  // Side quests
+  renderSideQuests();
+}
+
+function setMood(id){
+  S.mood=id;
+  var d=new Date();
+  S.moodHistory.push({mood:id,date:d.toISOString(),streak:S.streak});
+  if(S.moodHistory.length>30) S.moodHistory=S.moodHistory.slice(-30);
+  save();
+  renderMoodView();
+  gainXp(15,undefined,undefined,true);
+  toast('Mood set: '+MOODS.find(function(m){return m.id===id;}).label+' +15 XP');
+}
+
+function getSuggestions(){
+  var sugs=[];
+  if(!S.mood) return sugs;
+  // Based on mood
+  var moodMap={tired:['meditation','sleep','health'],burnt_out:['focus','health'],motivated:['strength','intelligence'],happy:['charisma','creativity'],bored:['creativity','wisdom']};
+  var preferred=moodMap[S.mood]||[];
+  S.areas.forEach(function(a){
+    if(preferred.indexOf(a.type)>=0){
+      var undone=a.habits.filter(function(h){return !h.done;});
+      if(undone.length) sugs.push({icon:'💡',name:undone[0].name,reason:'Good for your '+S.mood+' mood ('+a.name+')'});
+    }
+  });
+  // Streak suggestion
+  if(S.streak>0 && sugs.length<3) sugs.push({icon:'🔥',name:'Keep your '+S.streak+'-day streak!',reason:'Complete any habit today to maintain momentum'});
+  return sugs.slice(0,4);
+}
+
+function genSideQuests(){
+  var t=today(); if(S.sideQuestsDate===t) return;
+  var pool=SIDE_QUESTS_POOL.slice();
+  var chosen=[];
+  for(var i=0;i<2;i++){
+    var x=Math.floor(Math.random()*pool.length);
+    var q=JSON.parse(JSON.stringify(pool.splice(x,1)[0]));
+    q.done=false; q.id='sq'+Date.now()+i;
+    chosen.push(q);
+  }
+  S.sideQuests=chosen; S.sideQuestsDate=t; save();
+}
+
+function renderSideQuests(){
+  var c=document.getElementById('side-quests-list'); if(!c) return;
+  genSideQuests();
+  var h='';
+  S.sideQuests.forEach(function(q,i){
+    h+='<div class="qcard'+(q.done?' done':'')+'" onclick="claimSideQuest('+i+')">'
+      +'<div class="qi">'+q.icon+(q.done?' ✓':'')+'</div>'
+      +'<div class="qinfo"><div class="qn">'+q.name+'</div><div class="qd">'+q.desc+'</div></div>'
+      +'<div class="qxp">+'+q.xp+' XP</div></div>';
+  });
+  c.innerHTML=h||'<div style="font-size:12px;color:var(--muted)">Side quests refresh daily.</div>';
+}
+
+function claimSideQuest(i){
+  var q=S.sideQuests[i]; if(!q) return;
+  if(q.done){ q.done=false; save(); renderSideQuests(); return; }
+  q.done=true;
+  var xp=q.xp; if(S.skills['fn']) xp=Math.round(xp*1.25);
+  S.funXp=(S.funXp||0)+1;
+  gainXp(xp,undefined,undefined,true);
+  checkSkillUnlocks(); toast('Side quest done! +'+xp+' XP 🎈','gold');
+  save(); renderSideQuests();
+}
+
+// ═══════════════════════════════════════════════════
+// HABIT MAP
+// ═══════════════════════════════════════════════════
+var _mapScale=1, _mapOffX=0, _mapOffY=0;
+var _mapDrag=false, _mapLastX=0, _mapLastY=0;
+var _mapNodes=[], _mapAnimFrame=null;
+var _mapHoveredNode=null;
+
+var SKILL_DOT_COLORS={
+  strength:'#ef4444',intelligence:'#3b82f6',wisdom:'#22c55e',charisma:'#e879f9',
+  focus:'#818cf8',discipline:'#fb923c',creativity:'#38bdf8',health:'#34d399',hygiene:'#7dd3fc',''  :'#71717a'
+};
+
+function buildMapNodes(){
+  var nodes=[];
+  var cx=200, cy=210;
+  S.areas.forEach(function(area,ai){
+    var allH=[];
+    area.habits.forEach(function(h){allH.push({h:h,area:area});});
+    area.subs.forEach(function(s){s.habits.forEach(function(h){allH.push({h:h,area:area});});});
+
+    // Category cluster center
+    var angle=(ai/S.areas.length)*Math.PI*2;
+    var clusterR=100;
+    var cX=cx+Math.cos(angle)*clusterR;
+    var cY=cy+Math.sin(angle)*clusterR;
+
+    // Area node
+    var anode={
+      id:'a'+ai, label:area.name, type:'area',
+      x:cX, y:cY, vx:0, vy:0,
+      r:22+Math.min(allH.length*2,16),
+      color:SKILL_DOT_COLORS[area.type||'']||'#71717a',
+      done: allH.filter(function(x){return x.h.done;}).length===allH.length && allH.length>0,
+      total:allH.length,
+      doneCount:allH.filter(function(x){return x.h.done;}).length,
+      priority: allH.some(function(x){return x.h.priority==='high'}) ? 'high' : allH.some(function(x){return x.h.priority==='med'}) ? 'med' : 'low',
+    };
+    nodes.push(anode);
+
+    // Habit nodes around area
+    allH.forEach(function(item,hi){
+      var hangle=angle+((hi-(allH.length-1)/2)*0.35);
+      var hr=60;
+      nodes.push({
+        id:'h'+ai+'_'+hi, label:item.h.name, type:'habit',
+        x:cX+Math.cos(hangle)*hr, y:cY+Math.sin(hangle)*hr, vx:0, vy:0,
+        r:item.h.diff==='epic'?16:item.h.diff==='hard'?14:item.h.diff==='medium'?12:10,
+        color:SKILL_DOT_COLORS[area.type||'']||'#71717a',
+        done:item.h.done, priority:item.h.priority||'low',
+        parentId:'a'+ai, hab:item.h,
+      });
+    });
+  });
+  return nodes;
+}
+
+function renderMap(){
+  var canvas=document.getElementById('map-canvas');
+  var wrap=document.getElementById('map-canvas-wrap');
+  if(!canvas||!wrap) return;
+  canvas.width=wrap.clientWidth||360;
+  canvas.height=wrap.clientHeight||420;
+
+  _mapNodes=buildMapNodes();
+  renderMapFilters();
+  if(_mapAnimFrame) cancelAnimationFrame(_mapAnimFrame);
+  drawMap();
+
+  // Events
+  canvas.onmousedown=function(e){_mapDrag=true;_mapLastX=e.clientX;_mapLastY=e.clientY;};
+  canvas.onmousemove=function(e){
+    if(_mapDrag){_mapOffX+=e.clientX-_mapLastX;_mapOffY+=e.clientY-_mapLastY;_mapLastX=e.clientX;_mapLastY=e.clientY;drawMap();return;}
+    var r=canvas.getBoundingClientRect();
+    var mx=(e.clientX-r.left-_mapOffX)/_mapScale, my=(e.clientY-r.top-_mapOffY)/_mapScale;
+    var hit=_mapNodes.find(function(n){return Math.hypot(n.x-mx,n.y-my)<n.r+4;});
+    _mapHoveredNode=hit||null;
+    showMapTooltip(hit, e.clientX-r.left, e.clientY-r.top);
+    drawMap();
+  };
+  canvas.onmouseup=function(){_mapDrag=false;};
+  canvas.onmouseleave=function(){_mapDrag=false;_mapHoveredNode=null;hideMapTooltip();drawMap();};
+  canvas.onclick=function(e){
+    var r=canvas.getBoundingClientRect();
+    var mx=(e.clientX-r.left-_mapOffX)/_mapScale, my=(e.clientY-r.top-_mapOffY)/_mapScale;
+    var hit=_mapNodes.find(function(n){return Math.hypot(n.x-mx,n.y-my)<n.r+4;});
+    if(hit) showMapTooltip(hit, e.clientX-r.left, e.clientY-r.top);
+  };
+  canvas.onwheel=function(e){
+    e.preventDefault();
+    var delta=e.deltaY>0?0.9:1.1;
+    _mapScale=Math.max(0.4,Math.min(3,_mapScale*delta));
+    drawMap();
+  };
+  // Touch
+  var lastTouchDist=0;
+  canvas.ontouchstart=function(e){
+    if(e.touches.length===1){_mapDrag=true;_mapLastX=e.touches[0].clientX;_mapLastY=e.touches[0].clientY;}
+    else if(e.touches.length===2){lastTouchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}
+  };
+  canvas.ontouchmove=function(e){
+    e.preventDefault();
+    if(e.touches.length===1&&_mapDrag){_mapOffX+=e.touches[0].clientX-_mapLastX;_mapOffY+=e.touches[0].clientY-_mapLastY;_mapLastX=e.touches[0].clientX;_mapLastY=e.touches[0].clientY;drawMap();}
+    else if(e.touches.length===2){var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);_mapScale=Math.max(0.4,Math.min(3,_mapScale*(d/lastTouchDist)));lastTouchDist=d;drawMap();}
+  };
+  canvas.ontouchend=function(){_mapDrag=false;};
+}
+
+function drawMap(){
+  var canvas=document.getElementById('map-canvas'); if(!canvas) return;
+  var ctx=canvas.getContext('2d');
+  var W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  // Background
+  ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--surface')||'#1a1a1a';
+  ctx.fillRect(0,0,W,H);
+
+  ctx.save();
+  ctx.translate(_mapOffX,_mapOffY);
+  ctx.scale(_mapScale,_mapScale);
+
+  var filt=S.mapFilters||{};
+
+  // Draw connections
+  _mapNodes.forEach(function(n){
+    if(n.parentId){
+      var parent=_mapNodes.find(function(p){return p.id===n.parentId;});
+      if(parent){
+        ctx.beginPath();
+        ctx.moveTo(parent.x,parent.y);
+        ctx.lineTo(n.x,n.y);
+        ctx.strokeStyle=n.done?'rgba(110,231,183,0.4)':'rgba(255,255,255,0.08)';
+        ctx.lineWidth=n.done?2:1;
+        ctx.stroke();
+      }
+    }
+  });
+
+  // Draw nodes
+  _mapNodes.forEach(function(n){
+    var isHov=(_mapHoveredNode&&_mapHoveredNode.id===n.id);
+
+    // Priority ring
+    var priC={high:'#ef4444',med:'#f59e0b',low:'transparent'}[n.priority||'low'];
+    if(priC!=='transparent'){
+      ctx.beginPath(); ctx.arc(n.x,n.y,n.r+4,0,Math.PI*2);
+      ctx.strokeStyle=priC; ctx.lineWidth=2; ctx.stroke();
+    }
+
+    // Node glow for done
+    if(n.done){
+      ctx.shadowColor=n.color; ctx.shadowBlur=14;
+    }
+
+    // Circle
+    ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+    var alpha=n.done?1:0.7;
+    ctx.fillStyle=hexToRgba(n.color,alpha);
+    ctx.fill();
+    ctx.shadowBlur=0;
+
+    // Dashed border for incomplete
+    ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+    if(n.done){ctx.strokeStyle=n.color;ctx.lineWidth=2;ctx.setLineDash([]);}
+    else{ctx.strokeStyle=hexToRgba(n.color,0.5);ctx.lineWidth=1.5;ctx.setLineDash([4,3]);}
+    ctx.stroke(); ctx.setLineDash([]);
+
+    // Hover highlight
+    if(isHov){
+      ctx.beginPath(); ctx.arc(n.x,n.y,n.r+6,0,Math.PI*2);
+      ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=1.5; ctx.stroke();
+    }
+
+    // Label
+    ctx.fillStyle='rgba(255,255,255,'+(n.done?'0.9':'0.7')+')';
+    ctx.font=(n.type==='area'?'bold ':'')+(n.r>14?'10':'8')+'px Inter,sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    var label=n.label.length>12?n.label.slice(0,11)+'…':n.label;
+    ctx.fillText(label,n.x,n.y+(n.type==='area'?0:1));
+    ctx.textBaseline='alphabetic';
+
+    // Done checkmark overlay
+    if(n.done&&n.type==='habit'){
+      ctx.fillStyle='rgba(255,255,255,0.7)';
+      ctx.font='bold '+(n.r*0.6)+'px Inter';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('✓',n.x,n.y);
+      ctx.textBaseline='alphabetic';
+    }
+  });
+
+  ctx.restore();
+}
+
+function hexToRgba(hex,a){
+  if(!hex||hex[0]!=='#') return 'rgba(113,113,122,'+a+')';
+  hex=hex.replace('#','');
+  if(hex.length===3) hex=hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+  var r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);
+  return 'rgba('+r+','+g+','+b+','+a+')';
+}
+
+function showMapTooltip(node,x,y){
+  var tt=document.getElementById('map-tooltip'); if(!tt) return;
+  if(!node){tt.style.display='none';return;}
+  var content='<strong>'+node.label+'</strong>';
+  if(node.type==='area') content+='<br>'+node.doneCount+'/'+node.total+' habits done';
+  if(node.type==='habit'){
+    content+='<br>'+node.priority+' priority';
+    content+='<br>'+(node.done?'✓ Done today':'Not done');
+  }
+  tt.innerHTML=content;
+  tt.style.display='block';
+  tt.style.left=(x+12)+'px'; tt.style.top=(y+12)+'px';
+}
+function hideMapTooltip(){ var tt=document.getElementById('map-tooltip'); if(tt) tt.style.display='none'; }
+
+function renderMapFilters(){
+  var c=document.getElementById('map-filters'); if(!c) return;
+  var filt=S.mapFilters||{};
+  var h='';
+  h+='<button class="map-filter-btn'+(filt.todayOnly?' on':'')+'" onclick="toggleMapFilter(\'todayOnly\')">Today only</button>';
+  h+='<button class="map-filter-btn'+(filt.priority==='high'?' on':'')+'" onclick="toggleMapFilter(\'high\')">🔴 High</button>';
+  Object.keys(SKILL_DOT_COLORS).filter(function(k){return k;}).slice(0,5).forEach(function(type){
+    h+='<button class="map-filter-btn'+(filt.category===type?' on':'')+'" onclick="toggleMapFilter(\'cat_'+type+'\')" style="font-size:10px">'+(SECTION_SKILL[type]?SECTION_SKILL[type].split(' ')[0]:type)+'</button>';
+  });
+  h+='<button class="map-filter-btn" onclick="resetMap()" style="font-size:10px">Reset</button>';
+  c.innerHTML=h;
+}
+function toggleMapFilter(key){
+  if(!S.mapFilters) S.mapFilters={};
+  if(key==='todayOnly') S.mapFilters.todayOnly=!S.mapFilters.todayOnly;
+  else if(key==='high') S.mapFilters.priority=S.mapFilters.priority==='high'?'':'high';
+  else if(key.startsWith('cat_')){ var t=key.slice(4); S.mapFilters.category=S.mapFilters.category===t?'':t; }
+  renderMap();
+}
+function resetMap(){_mapScale=1;_mapOffX=0;_mapOffY=0;if(S.mapFilters)S.mapFilters={};renderMap();}
+
+// ═══════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════
+function renderDashboard(){
+  var c=document.getElementById('dashboard-content'); if(!c) return;
+  var done=countDone(), total=0;
+  (S.areas||[]).forEach(function(a){
+    a.habits.forEach(function(h){if(!h.isBad)total++;});
+    a.subs.forEach(function(s){s.habits.forEach(function(h){if(!h.isBad)total++;});});
+  });
+  var calDone=0, calTotal=(S.calEvents||[]).filter(function(e){return !e.hidden;}).length;
+  (S.calEvents||[]).filter(function(e){return !e.hidden;}).forEach(function(e){
+    if(!e.habitId){if(e.done)calDone++;return;}
+    (S.areas||[]).forEach(function(a){
+      a.habits.forEach(function(h){if(h.id===e.habitId&&h.done)calDone++;});
+      a.subs.forEach(function(s){s.habits.forEach(function(h){if(h.id===e.habitId&&h.done)calDone++;});});
+    });
+  });
+  var lo=xpBase(S.level),hi=xpBase(S.level+1);
+  var xpPct=hi>lo?Math.round((S.xp-lo)/(hi-lo)*100):100;
+  var calPct=calTotal?Math.round(calDone/calTotal*100):0;
+  var moodObj=S.mood?MOODS.find(function(m){return m.id===S.mood;}):null;
+
+  var h='<div class="dash-section">';
+  h+='<div class="dash-title">Today\'s Overview</div>';
+  h+='<div class="dash-grid">';
+  h+='<div class="dash-tile"><div class="dash-big">'+calDone+'<span style="font-size:1rem;color:var(--muted)">/'+calTotal+'</span></div><div class="dash-lbl">Calendar Done</div>'
+    +'<div class="dash-streak-bar"><div class="dash-streak-fill" style="width:'+calPct+'%;background:var(--accent)"></div></div></div>';
+  h+='<div class="dash-tile"><div class="dash-big">'+S.streak+'</div><div class="dash-lbl">Day Streak</div>'
+    +'<div class="dash-streak-bar"><div class="dash-streak-fill" style="width:'+Math.min(100,S.streak/30*100)+'%"></div></div></div>';
+  h+='<div class="dash-tile"><div class="dash-big">'+S.level+'</div><div class="dash-lbl">Level</div>'
+    +'<div class="dash-streak-bar"><div class="dash-streak-fill" style="width:'+xpPct+'%;background:var(--accent)"></div></div></div>';
+  h+='<div class="dash-tile"><div class="dash-big">'+(moodObj?moodObj.icon:'–')+'</div><div class="dash-lbl">'+(moodObj?moodObj.label:'No mood set')+'</div></div>';
+  h+='</div></div>';
+
+  // Section progress
+  if(S.areas&&S.areas.length){
+    h+='<div class="dash-section"><div class="dash-title">Sections</div>';
+    S.areas.forEach(function(a){
+      var at=0,ad=0;
+      a.habits.forEach(function(h2){if(!h2.isBad){at++;if(h2.done)ad++;}});
+      a.subs.forEach(function(s){s.habits.forEach(function(h2){if(!h2.isBad){at++;if(h2.done)ad++;}});});
+      var pct2=at?Math.round(ad/at*100):0;
+      var sc=a.type&&SKILL_COLOURS[a.type]?SKILL_COLOURS[a.type]:null;
+      h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+        +'<span style="font-size:12px;font-weight:600;min-width:90px">'+a.name+'</span>'
+        +'<div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden">'
+        +'<div style="height:100%;width:'+pct2+'%;background:'+(sc?sc.border:'var(--accent)')+';border-radius:3px;transition:width .4s"></div></div>'
+        +'<span style="font-size:11px;color:var(--muted);min-width:35px;text-align:right">'+ad+'/'+at+'</span></div>';
+    });
+    h+='</div>';
+  }
+
+  // Recent activity (mood history)
+  if(S.moodHistory&&S.moodHistory.length){
+    h+='<div class="dash-section"><div class="dash-title">Mood History</div>';
+    S.moodHistory.slice(-7).reverse().forEach(function(m){
+      var mo=MOODS.find(function(x){return x.id===m.mood;});
+      if(!mo) return;
+      var d=new Date(m.date);
+      h+='<div class="activity-row"><span style="font-size:16px">'+mo.icon+'</span><span style="flex:1">'+mo.label+'</span><span style="font-size:10px;color:var(--muted)">'+d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</span></div>';
+    });
+    h+='</div>';
+  }
+
+  c.innerHTML=h;
+}
+
+// ═══════════════════════════════════════════════════
+// FOCUS HABIT SELECT
+// ═══════════════════════════════════════════════════
+function toggleFocusHabitSelect(){
+  var el=document.getElementById('f-habit-select');
+  if(!el) return;
+  var visible=el.style.display!=='none';
+  el.style.display=visible?'none':'block';
+  if(!visible) renderFocusHabitList();
+}
+
+function renderFocusHabitList(){
+  var c=document.getElementById('f-habit-list'); if(!c) return;
+  var allH=getAllHabitsFlat();
+  if(!allH.length){c.innerHTML='<div style="font-size:12px;color:var(--muted)">No habits yet.</div>';return;}
+  var h='';
+  allH.forEach(function(hab,i){
+    var sel=(S.focusHabitIds||[]).indexOf(hab.id)>=0;
+    h+='<div class="focus-hab-item'+(sel?' sel':'')+'" onclick="toggleFocusHabit(\''+hab.id+'\')">'
+      +'<div class="fh-check">'+(sel?'✓':'')+'</div>'
+      +'<span style="font-size:12px">'+hab.name+' <span style="font-size:10px;color:var(--muted)">'+hab.areaName+'</span></span></div>';
+  });
+  c.innerHTML=h;
+}
+
+function toggleFocusHabit(id){
+  if(!S.focusHabitIds) S.focusHabitIds=[];
+  var idx=S.focusHabitIds.indexOf(id);
+  if(idx>=0) S.focusHabitIds.splice(idx,1);
+  else S.focusHabitIds.push(id);
+  save(); renderFocusHabitList();
+}
+
+// Patch openFocus to show habit list
+var _origOpenFocus=openFocus;
+openFocus=function(){
+  _origOpenFocus();
+  if(S.focusHabitIds&&S.focusHabitIds.length) renderFocusHabitList();
+};
+
+// ═══════════════════════════════════════════════════
+// PATCH go() for new views
+// ═══════════════════════════════════════════════════
+var _origGoFinal=go;
+go=function(name,tab){
+  _origGoFinal(name,tab);
+  if(name==='map'){_mapScale=1;_mapOffX=0;_mapOffY=0;setTimeout(renderMap,50);}
+  if(name==='mood'){genSideQuests();renderMoodView();}
+  if(name==='dashboard') renderDashboard();
+};
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+checkSeasonal();
+genSideQuests();
 
 </script>
 </body>
