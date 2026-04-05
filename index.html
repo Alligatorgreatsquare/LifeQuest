@@ -139,7 +139,7 @@ overscroll-behavior-y: auto;
 min-height: 0;
 scroll-behavior: smooth;
 }
-.view { display: none; padding: 14px 16px 32px; }
+.view { display: none; padding: 14px 16px 80px; }
 .view.on { display: block; animation: vFadeIn .18s ease-out both; }
 @keyframes vFadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -2422,40 +2422,52 @@ function deleteCal(i){ S.calEvents.splice(i,1); save(); renderCalendarView(); }
 // NAV & SETTINGS
 // ══════════════════════════════════════════
 function go(name, tab){
+  // Switch views
   document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});
-  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
-  var el=document.getElementById('v-'+name);
+  var el = document.getElementById('v-'+name);
   if(el) el.classList.add('on');
-  if(tab) tab.classList.add('on');
 
-  if(name==='planner'){
-    renderHabits(); renderCalendarView(); renderDailyProgress();
-    setTimeout(function(){
-      var pc=document.getElementById('planner-cal'), ct=document.getElementById('cal-today');
-      if(pc&&ct) pc.innerHTML=ct.innerHTML;
-      var pa=document.getElementById('planner-areas'), ar=document.getElementById('areas-root');
-      if(pa&&ar) pa.innerHTML=ar.innerHTML;
-    },60);
+  // Highlight the correct nav tab
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
+  if(tab) {
+    tab.classList.add('on');
+  } else {
+    // No tab passed — find the matching tab by data or onclick
+    document.querySelectorAll('#nav .tab').forEach(function(t){
+      if(t.getAttribute('onclick') && t.getAttribute('onclick').indexOf("'"+name+"'") >= 0){
+        t.classList.add('on');
+      }
+    });
   }
-  if(name==='challenges') renderChallenges();
-  if(name==='journey')    renderJourney();
-  if(name==='map')        { _mapScale=1;_mapOffX=0;_mapOffY=0;setTimeout(renderMap,60); }
-  if(name==='dashboard')  renderDashboard();
-  if(name==='shop')       renderShop();
-  if(name==='settings') {
-    renderSettings();
-    document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});
-    var sv=document.getElementById('v-settings');
-    if(sv) sv.classList.add('on');
+
+  // Render content for the view
+  try {
+    if(name==='planner'){
+      renderHabits(); renderCalendarView(); renderDailyProgress();
+      setTimeout(function(){
+        var pc=document.getElementById('planner-cal'), ct=document.getElementById('cal-today');
+        if(pc&&ct) pc.innerHTML=ct.innerHTML;
+        var pa=document.getElementById('planner-areas'), ar=document.getElementById('areas-root');
+        if(pa&&ar) pa.innerHTML=ar.innerHTML;
+      },60);
+    }
+    if(name==='challenges') renderChallenges();
+    if(name==='journey')    renderJourney();
+    if(name==='map')        { _mapScale=1;_mapOffX=0;_mapOffY=0;setTimeout(renderMap,60); }
+    if(name==='dashboard')  renderDashboard();
+    if(name==='shop')       renderShop();
+    if(name==='settings')   renderSettings();
+    if(name==='quests')     { renderQuests(); renderDailyProgress(); }
+    if(name==='habits')     renderHabits();
+    if(name==='calendar')   renderCalendarView();
+    if(name==='character')  renderCharacter();
+    if(name==='boss')       { checkBoss(); renderBoss(); }
+    if(name==='skills')     { checkSkillUnlocks(); renderSkills(); }
+    if(name==='stats')      renderStats();
+    if(name==='mood')       { genSideQuests(); renderMoodView(); }
+  } catch(e) {
+    console.error('LifeQuest go('+name+') error:', e);
   }
-  if(name==='quests')    { renderQuests(); renderDailyProgress(); }
-  if(name==='habits')    renderHabits();
-  if(name==='calendar')  renderCalendarView();
-  if(name==='character') renderCharacter();
-  if(name==='boss')      { checkBoss(); renderBoss(); }
-  if(name==='skills')    { checkSkillUnlocks(); renderSkills(); }
-  if(name==='stats')     renderStats();
-  if(name==='mood')      { genSideQuests(); renderMoodView(); }
 }
 
 
@@ -3812,16 +3824,21 @@ function renderChallenges(){
     });
     cb.innerHTML=h||'<div style="font-size:12px;color:var(--muted)">No bonus quests.</div>';
   }
-  // Mood picker
+  // Mood picker — use data attributes, wire clicks via event delegation
   var mp = document.getElementById('chal-mood-picker');
   if(mp){
     var h='<div class="mood-grid">';
-    MOODS.forEach(function(m,mi){
-      h+='<div class="mood-btn'+(S.mood===m.id?' sel':'')+'" onclick="setMoodIdx('+mi+')">'
+    MOODS.forEach(function(m){
+      h+='<div class="mood-btn'+(S.mood===m.id?' sel':'')+'" data-mood="'+m.id+'">'
         +'<span class="mood-icon">'+m.icon+'</span>'+m.label+'</div>';
     });
     h+='</div>';
     mp.innerHTML=h;
+    // Attach click handler via event delegation (works in sandboxed iframes)
+    mp.onclick=function(e){
+      var btn=e.target.closest('[data-mood]');
+      if(btn) setMood(btn.getAttribute('data-mood'));
+    };
   }
   // Side quests
   genSideQuests();
@@ -4190,13 +4207,22 @@ function resetXP() {
 // FIX setMood — no XP, give 3 mood-specific quests
 // ═══════════════════════════════════════════════════
 function setMood(id) {
+  if(!id) return;
   S.mood = id;
-  var d = new Date();
-  S.moodHistory.push({ mood: id, date: d.toISOString(), streak: S.streak });
-  if (S.moodHistory.length > 30) S.moodHistory = S.moodHistory.slice(-30);
-  save();
-  renderChallenges();  // re-renders mood picker + mood quests
-  var mo = MOODS.find(function(m) { return m.id === id; });
+  if(!S.moodHistory) S.moodHistory = [];
+  S.moodHistory.push({ mood: id, date: new Date().toISOString(), streak: S.streak||0 });
+  if(S.moodHistory.length > 30) S.moodHistory = S.moodHistory.slice(-30);
+  save();  // persist immediately
+  // Re-render mood picker to show selection
+  var mp = document.getElementById('chal-mood-picker');
+  if(mp){
+    mp.querySelectorAll('.mood-btn').forEach(function(btn){
+      btn.classList.toggle('sel', btn.getAttribute('data-mood') === id);
+    });
+  }
+  // Re-render mood quests
+  if(typeof renderChallenges === 'function') renderChallenges();
+  var mo = MOODS ? MOODS.find(function(m){return m.id===id;}) : null;
   toast('Mood: ' + (mo ? mo.label : id));
 }
 
