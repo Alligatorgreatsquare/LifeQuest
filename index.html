@@ -135,7 +135,7 @@ flex: 1;
 overflow-y: auto;
 overflow-x: hidden;
 -webkit-overflow-scrolling: touch;
-overscroll-behavior: contain;
+overscroll-behavior-y: auto;
 min-height: 0;
 scroll-behavior: smooth;
 }
@@ -609,6 +609,45 @@ margin-bottom: 10px;
 /* Map container */
 #map-canvas-wrap { background: var(–surface) !important; }
 
+/* ── LIGHT MODE ─────────────────────────────────── */
+body.light-mode {
+–bg:       #f5f5f5;
+–surface:  #ffffff;
+–surface2: #efefef;
+–border:   #d8d8d8;
+–border2:  #c0c0c0;
+–text:     #111111;
+–text2:    #555555;
+–muted:    #888888;
+–muted2:   #aaaaaa;
+}
+#theme-toggle {
+cursor: pointer;
+font-size: 17px;
+padding: 4px 7px;
+border-radius: 8px;
+border: none;
+background: transparent;
+line-height: 1;
+color: var(–muted);
+transition: color .15s;
+}
+#theme-toggle:hover { color: var(–text); }
+
+.daily-quote-banner {
+font-size: 12px;
+font-style: italic;
+color: var(–text2);
+background: var(–surface);
+border-left: 3px solid var(–accent);
+border-radius: 0 var(–rs) var(–rs) 0;
+padding: 9px 13px;
+margin-bottom: 14px;
+line-height: 1.5;
+display: none;
+}
+.daily-quote-banner.loaded { display: block; }
+
 </style>
 </head>
 <body>
@@ -627,8 +666,6 @@ margin-bottom: 10px;
   <div id="hdr-right" style="flex-direction:row;align-items:center;gap:10px">
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
       <div id="streak-pill">🔥 <span id="streak-num">0</span></div>
-      <div class="xp-strip"><div class="xp-bar" id="xp-bar" style="width:0%"></div></div>
-      <div class="xp-cap" id="xp-cap">0 / 500 xp</div>
       <div id="energy-row" style="display:none">⚡ <span id="nrg-num">10</span>/10</div>
     </div>
     <div onclick="go('settings',null)" title="Settings" style="font-size:20px;cursor:pointer;padding:6px;border-radius:8px;line-height:1;color:var(--muted);transition:color .15s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">⚙️</div>
@@ -689,6 +726,11 @@ margin-bottom: 10px;
   <!-- STATS -->
 
   <div class="view" id="v-stats">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;letter-spacing:.06em;text-transform:uppercase">XP Progress</div>
+      <div class="xp-strip" style="width:100%;height:8px;border-radius:4px;margin-bottom:4px"><div class="xp-bar" id="xp-bar" style="width:0%"></div></div>
+      <div class="xp-cap" id="xp-cap" style="font-size:12px;color:var(--muted);text-align:right">0 / 500 xp</div>
+    </div>
     <div class="stat-grid" id="stat-grid"></div>
     <div class="eyebrow">Time Tracked</div>
     <div id="time-tracked-list" style="margin-bottom:14px"></div>
@@ -746,6 +788,10 @@ margin-bottom: 10px;
 <div class="eyebrow">Name & Theme</div>
 <div class="settings-card">
   <div class="set-row">
+    <div><div class="set-label">Light / Dark mode</div><div class="set-sub">Toggle the colour scheme</div></div>
+    <button id="theme-toggle" onclick="toggleLightMode()" title="Light/Dark mode" style="font-size:20px;background:transparent;border:1px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;color:var(--text)">☀️</button>
+  </div>
+  <div class="set-row">
     <div><div class="set-label">Accent colour</div></div>
     <div class="dot-row">
       <div class="dot on" style="background:#6366f1" onclick="setTheme('')"></div>
@@ -786,9 +832,13 @@ margin-bottom: 10px;
     <div><div class="set-label">Clear calendar</div><div class="set-sub">Remove all scheduled habits</div></div>
     <button class="btn-sm sec" onclick="clearCalendar()">Clear</button>
   </div>
-  <div class="set-row" style="border:none">
+  <div class="set-row">
     <div><div class="set-label">Reset calendar habits</div><div class="set-sub">Un-tick today's completions</div></div>
     <button class="btn-sm sec" onclick="resetDaily()">Reset</button>
+  </div>
+  <div class="set-row" style="border:none">
+    <div><div class="set-label">Reset XP</div><div class="set-sub">Set XP and level back to zero</div></div>
+    <button class="btn-sm sec" onclick="resetXP()">Reset XP</button>
   </div>
 </div>
 ```
@@ -852,7 +902,8 @@ margin-bottom: 10px;
   <!-- DASHBOARD -->
 
   <div class="view" id="v-dashboard">
-    <div id="dashboard-content"></div>
+    <div class="daily-quote-banner" id="daily-quote"></div>
+        <div id="dashboard-content"></div>
   </div>
 
 </div>
@@ -862,7 +913,8 @@ margin-bottom: 10px;
   <!-- PLANNER: habits + calendar combined -->
 
   <div class="view" id="v-planner">
-    <div id="planner-penalty-area"></div>
+    <div class="daily-quote-banner" id="daily-quote"></div>
+        <div id="planner-penalty-area"></div>
     <div style="margin-bottom:12px">
       <div class="daily-progress-bar"><div class="daily-progress-fill" id="planner-prog-fill" style="width:0%"></div></div>
       <div class="daily-goal-row"><span id="planner-prog-label">0 / 4 tasks</span><span id="planner-prog-status" style="font-weight:600"></span></div>
@@ -878,12 +930,15 @@ margin-bottom: 10px;
   <!-- CHALLENGES: quests + mood combined -->
 
   <div class="view" id="v-challenges">
-    <div class="eyebrow">Daily Quests</div>
+    <div class="daily-quote-banner" id="daily-quote"></div>
+        <div class="eyebrow">Daily Quests</div>
     <div id="chal-quests"></div>
     <div class="eyebrow" style="margin-top:14px">Bonus Quests</div>
     <div id="chal-bonus"></div>
     <div class="eyebrow" style="margin-top:14px">How are you feeling?</div>
     <div id="chal-mood-picker"></div>
+    <div class="eyebrow" style="margin-top:12px">Mood Quests</div>
+    <div id="chal-mood-quests"><div style="font-size:12px;color:var(--muted);padding:4px 0">Select a mood above to see personalised quests.</div></div>
     <div class="eyebrow" style="margin-top:14px">Side Quests <span style="font-size:9px;color:var(--muted);font-weight:400">🎈 optional</span></div>
     <div id="chal-side-quests"></div>
     <div class="eyebrow" style="margin-top:14px">Suggestions</div>
@@ -893,7 +948,8 @@ margin-bottom: 10px;
   <!-- JOURNEY: hero + boss combined -->
 
   <div class="view" id="v-journey">
-    <div class="eyebrow">Your Hero</div>
+    <div class="daily-quote-banner" id="daily-quote"></div>
+        <div class="eyebrow">Your Hero</div>
     <div class="char-card">
       <div class="char-title" id="journey-char-name">Hero</div>
       <div class="char-rank-name" id="journey-char-rank">Squire</div>
@@ -908,6 +964,8 @@ margin-bottom: 10px;
     <div id="journey-boss"></div>
     <div class="eyebrow" style="margin-top:14px">Skills</div>
     <div id="journey-skills"></div>
+    <div class="eyebrow" style="margin-top:14px">Life Skills 🌱</div>
+    <div id="journey-life-skills"></div>
   </div>
 
   <!-- BRAIN DUMP + QUICK CAPTURES + LIFE SKILLS -->
@@ -926,6 +984,8 @@ margin-bottom: 10px;
     <div id="life-skills-list"></div>
     <button class="btn-sm sec" onclick="openAddLifeSkill()" style="margin-top:4px">＋ Add Life Skill</button>
   </div>
+
+</div><!-- #content -->
 
 <div id="nav">
   <div class="tab on" onclick="go('planner',this)"><div class="ti">📋</div><div class="tl">Planner</div></div>
@@ -1365,6 +1425,7 @@ function load(){
   if(S.funXp === undefined)             S.funXp = 0;
   if(!S.focusHabitIds)                  S.focusHabitIds = [];
   if(!S.mapFilters)                     S.mapFilters = {category:'', priority:'', todayOnly:false};
+  if(S.lightMode===undefined)            S.lightMode = false;
 
   // Structural integrity: ensure every area and sub has required arrays
   S.areas.forEach(function(a){
@@ -1399,6 +1460,7 @@ window.onload = function(){
   var nameField = document.getElementById('name-field');
   if(nameField) nameField.value = S.name;
   if(S.theme) document.body.classList.add('t-'+S.theme);
+  if(S.lightMode){ document.body.classList.add('light-mode'); var btn=document.getElementById('theme-toggle'); if(btn) btn.textContent='🌙'; }
   checkSeasonal();
   // Activate the first tab (Planner) and render it
   var firstTab = document.querySelector('#nav .tab');
@@ -3035,6 +3097,8 @@ var MOODS=[
   {id:'anxious',   icon:'😰', label:'Anxious'},
   {id:'excited',   icon:'🤩', label:'Excited'},
 ];
+function setMoodIdx(i){ if(MOODS[i]) setMood(MOODS[i].id); }
+
 
 var MOOD_QUESTS={
   happy:     [{n:'Reach out to a friend',x:60},{n:'Start something you\'ve been putting off',x:80},{n:'Write 3 things you\'re grateful for',x:40}],
@@ -3115,17 +3179,7 @@ function renderMoodView(){
   renderSideQuests();
 }
 
-function setMood(id){
-  S.mood=id;
-  var d=new Date();
-  S.moodHistory.push({mood:id,date:d.toISOString(),streak:S.streak});
-  if(S.moodHistory.length>30) S.moodHistory=S.moodHistory.slice(-30);
-  save();
-  renderMoodView();
-  gainXp(15,undefined,undefined,true);
-  toast('Mood set: '+MOODS.find(function(m){return m.id===id;}).label+' +15 XP');
-}
-
+// old setMood removed - new version in appended JS
 function getSuggestions(){
   var sugs=[];
   if(!S.mood) return sugs;
@@ -3732,6 +3786,8 @@ function renderPlanner(){
 // CHALLENGES VIEW (quests + mood combined)
 // ═══════════════════════════════════════════════════
 function renderChallenges(){
+  // Ensure quests exist before rendering
+  genQuests(); genBonusQuests(); genSideQuests();
   // Daily quests
   var cq = document.getElementById('chal-quests');
   if(cq){
@@ -3801,40 +3857,38 @@ function renderChallenges(){
 // JOURNEY VIEW (hero + boss combined)
 // ═══════════════════════════════════════════════════
 function renderJourney(){
-  var cls=getCurrentClass();
-  var skin=SKIN_TONES.find(function(s){return s.id===(S.charSkin||'s1');})||SKIN_TONES[0];
-  var n=document.getElementById('journey-char-name');
-  var r=document.getElementById('journey-char-rank');
-  var sv=document.getElementById('journey-char-svg');
-  var lr=document.getElementById('journey-lvl-ring');
-  if(n) n.textContent=S.name;
-  if(r) r.textContent=cls.name+' · Level '+S.level;
-  if(sv) sv.innerHTML=buildCharSVG(cls,skin);
-  if(lr) lr.textContent='Lv '+S.level+' '+cls.name;
-  // Skin row
-  var sr=document.getElementById('journey-skin-row');
+  var cls  = getCurrentClass();
+  var skin = SKIN_TONES.find(function(s){return s.id===(S.charSkin||'s1');})||SKIN_TONES[0];
+
+  // Character panel
+  var n = document.getElementById('journey-char-name');
+  var r = document.getElementById('journey-char-rank');
+  var sv= document.getElementById('journey-char-svg');
+  var lr= document.getElementById('journey-lvl-ring');
+  var sr= document.getElementById('journey-skin-row');
+  if(n)  n.textContent  = S.name;
+  if(r)  r.textContent  = cls.name + ' · Level ' + S.level;
+  if(sv) sv.innerHTML   = buildCharSVG(cls, skin);
+  if(lr) lr.textContent = 'Lv ' + S.level + ' ' + cls.name;
   if(sr){
-    var h='';
+    var sh='';
     SKIN_TONES.forEach(function(st,si){
-      h+='<div class="skin-btn'+(S.charSkin===st.id?' on':'')+'" title="'+st.label+'" style="background:'+st.body+'" onclick="setSkinIdx('+si+')"></div>';
+      sh+='<div class="skin-btn'+(S.charSkin===st.id?' on':'')+'" title="'+st.label+'" style="background:'+st.body+'" onclick="setSkinIdx('+si+')"></div>';
     });
-    sr.innerHTML=h;
+    sr.innerHTML=sh;
   }
-  // Boss
-  var jb=document.getElementById('journey-boss');
-  if(jb){
-    checkBoss();
-    var bossEl=document.getElementById('boss-view');
-    if(bossEl) jb.innerHTML=bossEl.innerHTML;
-    else renderBoss();
-  }
-  // Skills
-  var jsk=document.getElementById('journey-skills');
-  if(jsk){
-    checkSkillUnlocks();
-    var skEl=document.getElementById('skill-list');
-    if(skEl) jsk.innerHTML=skEl.innerHTML;
-  }
+
+  // Boss — render directly (don't copy from hidden v-boss)
+  var jb = document.getElementById('journey-boss');
+  if(jb){ checkBoss(); renderBoss(); var bv=document.getElementById('boss-view'); if(bv) jb.innerHTML=bv.innerHTML; }
+
+  // Skills — render directly
+  var jsk = document.getElementById('journey-skills');
+  if(jsk){ checkSkillUnlocks(); renderSkills(); var skl=document.getElementById('skill-list'); if(skl) jsk.innerHTML=skl.innerHTML; }
+
+  // Life Skills
+  var jls = document.getElementById('journey-life-skills');
+  if(jls){ renderLifeSkills(); var lsl=document.getElementById('life-skills-list'); if(lsl) jls.innerHTML=lsl.innerHTML; }
 }
 
 // ═══════════════════════════════════════════════════
@@ -3842,17 +3896,19 @@ function renderJourney(){
 // ═══════════════════════════════════════════════════
 var _brainDumpItems=[];
 function parseBrainDump(){
-  var raw=document.getElementById('brain-dump-input').value.trim();
-  if(!raw) return;
-  var lines=raw.split('\n');
-  var items=[];
+  var raw = document.getElementById('brain-dump-input');
+  if(!raw || !raw.value.trim()) return;
+  var lines = raw.value.split('\n');
+  var added = 0;
   lines.forEach(function(l){
-    var t=l.trim().replace(/^[-*•]+\s*/,'');
-    if(t) items.push({text:t,converted:false});
+    var t = l.trim().replace(/^[-*•·]+\s*/, '');
+    if(t){
+      if(!S.quickCaptures) S.quickCaptures = [];
+      S.quickCaptures.push({text: t, ts: Date.now(), converted: false});
+      added++;
+    }
   });
-  _brainDumpItems=items;
-  renderBrainDumpTasks();
-  document.getElementById('brain-dump-input').value='';
+  if(added){ raw.value = ''; save(); renderBrainDumpAll(); toast(added + ' item' + (added>1?'s':'') + ' saved'); }
 }
 
 function renderBrainDumpTasks(){
@@ -3902,24 +3958,28 @@ function saveQuickCapture(){
 // BRAIN DUMP: show quick captures too
 // ═══════════════════════════════════════════════════
 function renderBrainDumpAll(){
-  // Show quick-captured items at the top
-  var quickEl = document.getElementById('brain-dump-quick-list');
-  if(quickEl && S.quickCaptures && S.quickCaptures.length){
-    var h = '';
-    S.quickCaptures.slice().reverse().forEach(function(c, i){
-      var ri = S.quickCaptures.length - 1 - i;
-      var d = new Date(c.ts);
-      var timeStr = d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + ' ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-      h += '<div style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:6px">'
-         + '<span style="flex:1;font-size:13px;line-height:1.4">'+c.text+'</span>'
-         + '<span style="font-size:10px;color:var(--muted);white-space:nowrap;margin-left:4px">'+timeStr+'</span>'
-         + '<span onclick="deleteQuickCapture('+ri+')" style="font-size:12px;color:var(--muted2);cursor:pointer;padding:0 4px" title="Delete">✕</span>'
-         + '</div>';
-    });
-    quickEl.innerHTML = h;
-  } else if(quickEl) {
-    quickEl.innerHTML = '<div style="font-size:12px;color:var(--muted)">No captures yet. Tap + to add one.</div>';
+  var c = document.getElementById('brain-dump-quick-list');
+  if(!c) return;
+  if(!S.quickCaptures || !S.quickCaptures.length){
+    c.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:8px 0">No entries yet. Type below and tap Save.</div>';
+    return;
   }
+  var h = '';
+  S.quickCaptures.slice().reverse().forEach(function(cap, ri){
+    var realIdx = S.quickCaptures.length - 1 - ri;
+    var d = new Date(cap.ts);
+    var time = d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + ' ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    h += '<div style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:var(--surface);border:1px solid '+(cap.converted?'var(--green)':'var(--border)')+';border-radius:var(--rs);margin-bottom:6px">'
+       + '<div style="flex:1;min-width:0">'
+       + '<div style="font-size:13px;line-height:1.4;'+(cap.converted?'text-decoration:line-through;color:var(--muted)':'')+'">'+cap.text+'</div>'
+       + '<div style="font-size:10px;color:var(--muted);margin-top:3px">'+time+(cap.converted?' · Added to habits':'')+'</div>'
+       + '</div>'
+       + '<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">'
+       + (cap.converted ? '' : '<button onclick="addBrainDumpItem('+realIdx+')" style="padding:3px 8px;background:var(--accent);color:#fff;border:none;border-radius:var(--rx);font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap">+ Habit</button>')
+       + '<button onclick="deleteBrainEntry('+realIdx+')" style="padding:3px 8px;background:transparent;color:var(--muted2);border:1px solid var(--border);border-radius:var(--rx);font-size:10px;cursor:pointer">✕</button>'
+       + '</div></div>';
+  });
+  c.innerHTML = h;
 }
 
 function deleteQuickCapture(i){
@@ -4031,6 +4091,264 @@ document.addEventListener('visibilitychange', function(){
 });
 // Also save before page unload
 window.addEventListener('beforeunload', function(){ save(); });
+
+function addBrainDumpItem(i){
+  var cap = S.quickCaptures && S.quickCaptures[i];
+  if(!cap || cap.converted) return;
+  // Pre-fill the habit modal and open it
+  if(!S.areas || !S.areas.length){
+    toast('Create a section in Planner first', 'warn'); return;
+  }
+  pendingHabitTarget = {ai:0, si:-1};
+  var ni = document.getElementById('m-habit-name');
+  if(ni) ni.value = cap.text;
+  cap.converted = true;
+  save();
+  renderBrainDumpAll();
+  openModal('m-habit');
+}
+
+function deleteBrainEntry(i){
+  if(!S.quickCaptures) return;
+  S.quickCaptures.splice(i, 1);
+  save();
+  renderBrainDumpAll();
+}
+
+function toggleLightMode(){
+  var isLight = document.body.classList.toggle('light-mode');
+  S.lightMode = isLight;
+  save();
+  var btn = document.getElementById('theme-toggle');
+  if(btn) btn.textContent = isLight ? '🌙' : '☀️';
+}
+// ═══════════════════════════════════════════════════
+// DAILY MOTIVATIONAL QUOTES
+// ═══════════════════════════════════════════════════
+var DAILY_QUOTES = [
+  "Small steps every day lead to massive results.",
+  "The secret of getting ahead is getting started.",
+  "You don't have to be perfect — you just have to show up.",
+  "Discipline is choosing what you want most over what you want now.",
+  "Progress, not perfection.",
+  "Every day is a fresh start.",
+  "The only bad workout is the one that didn't happen.",
+  "Do something today your future self will thank you for.",
+  "Consistency beats intensity every time.",
+  "One habit. One day. One win.",
+  "Hard days build strong people.",
+  "Your future is created by what you do today.",
+  "Motivation gets you started. Habit keeps you going.",
+  "You are one decision away from a completely different life.",
+  "Be stronger than your excuses.",
+  "Show up even when you don't feel like it.",
+  "A little progress each day adds up to big results.",
+  "Don't count the days — make the days count.",
+  "The pain of discipline is less than the pain of regret.",
+  "Great things never come from comfort zones.",
+  "It always seems impossible until it's done.",
+  "Success is the sum of small efforts repeated day in and day out.",
+  "Your only competition is who you were yesterday.",
+  "Wake up. Grind. Sleep. Repeat.",
+  "You've got this. Seriously.",
+  "Champions train when no one is watching.",
+  "Earn it.",
+  "The harder you work, the luckier you get.",
+  "Push yourself — nobody else is going to do it for you.",
+  "Dream big. Start small. Act now.",
+];
+
+function getDailyQuote() {
+  var d = new Date();
+  var dayOfYear = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
+  return DAILY_QUOTES[dayOfYear % DAILY_QUOTES.length];
+}
+
+function renderDailyQuotes() {
+  var q = getDailyQuote();
+  document.querySelectorAll('.daily-quote-banner').forEach(function(el) {
+    el.textContent = '"' + q + '"';
+    el.classList.add('loaded');
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// RESET XP
+// ═══════════════════════════════════════════════════
+function resetXP() {
+  if (!confirm('Reset your XP and level back to zero? This cannot be undone.')) return;
+  S.xp = 0;
+  S.level = 1;
+  S.totalXp = 0;
+  save();
+  renderHeader();
+  renderStats();
+  toast('XP reset to zero');
+}
+
+// ═══════════════════════════════════════════════════
+// FIX setMood — no XP, give 3 mood-specific quests
+// ═══════════════════════════════════════════════════
+function setMood(id) {
+  S.mood = id;
+  var d = new Date();
+  S.moodHistory.push({ mood: id, date: d.toISOString(), streak: S.streak });
+  if (S.moodHistory.length > 30) S.moodHistory = S.moodHistory.slice(-30);
+  save();
+  renderChallenges();  // re-renders mood picker + mood quests
+  var mo = MOODS.find(function(m) { return m.id === id; });
+  toast('Mood: ' + (mo ? mo.label : id));
+}
+
+// ═══════════════════════════════════════════════════
+// MOOD QUEST CLAIMING (mood quests are one-time per day)
+// ═══════════════════════════════════════════════════
+function claimMoodQuest(moodId, idx) {
+  if (!S.moodQuestsDone) S.moodQuestsDone = {};
+  var key = moodId + '_' + idx + '_' + today();
+  if (S.moodQuestsDone[key]) {
+    // unclaim
+    delete S.moodQuestsDone[key];
+    var xp = (MOOD_QUESTS[moodId] && MOOD_QUESTS[moodId][idx]) ? MOOD_QUESTS[moodId][idx].x : 0;
+    spendXp(xp);
+    save(); renderChallenges(); return;
+  }
+  S.moodQuestsDone[key] = true;
+  var quest = MOOD_QUESTS[moodId] && MOOD_QUESTS[moodId][idx];
+  var xp = quest ? quest.x : 50;
+  gainXp(xp);
+  bossDmg(15);
+  save();
+  renderChallenges();
+  toast('+' + xp + ' XP — mood quest done!', 'gold');
+}
+
+// ═══════════════════════════════════════════════════
+// DICE — random quest when bored
+// ═══════════════════════════════════════════════════
+var RANDOM_QUESTS = [
+  { name: 'Go for a 10 min walk', xp: 60 },
+  { name: 'Drink a full glass of water', xp: 20 },
+  { name: 'Do 20 push-ups', xp: 70 },
+  { name: 'Write 3 things you\'re grateful for', xp: 40 },
+  { name: 'Clean one small space in your room', xp: 50 },
+  { name: 'Text someone you haven\'t spoken to in a while', xp: 60 },
+  { name: 'Read for 15 minutes', xp: 55 },
+  { name: 'Stretch for 5 minutes', xp: 35 },
+  { name: 'Listen to a song that motivates you', xp: 30 },
+  { name: 'Plan tomorrow\'s top 3 tasks', xp: 65 },
+  { name: 'Do 5 minutes of deep breathing', xp: 30 },
+  { name: 'Tidy your desk or workspace', xp: 45 },
+  { name: 'Write down one goal for this week', xp: 50 },
+  { name: 'Learn one new fact right now', xp: 40 },
+  { name: 'Do something creative for 10 mins', xp: 55 },
+  { name: 'Stand up and move for 2 minutes', xp: 25 },
+  { name: 'Watch a motivational video', xp: 35 },
+  { name: 'Cook or prep a healthy snack', xp: 50 },
+  { name: 'Journal for 5 minutes', xp: 45 },
+  { name: 'Call a friend or family member', xp: 60 },
+];
+
+var _currentRandomQuest = null;
+
+function rollRandomQuest() {
+  var q = RANDOM_QUESTS[Math.floor(Math.random() * RANDOM_QUESTS.length)];
+  _currentRandomQuest = { name: q.name, xp: q.xp, done: false };
+  var banner = document.getElementById('random-quest-banner');
+  if (!banner) return;
+  banner.style.display = 'block';
+  banner.innerHTML = '<div style="background:var(--surface);border:1px solid var(--accent);border-radius:var(--rs);padding:11px 13px;display:flex;align-items:center;gap:10px">'
+    + '<div style="font-size:18px;flex-shrink:0">🎲</div>'
+    + '<div style="flex:1"><div style="font-size:13px;font-weight:600">' + q.name + '</div>'
+    + '<div style="font-size:11px;color:var(--muted);margin-top:2px">Random quest · +' + q.xp + ' XP</div></div>'
+    + '<button onclick="claimRandomQuest()" style="padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);font-size:11px;font-weight:600;cursor:pointer">Done</button>'
+    + '<button onclick="dismissRandomQuest()" style="padding:6px 8px;background:transparent;border:1px solid var(--border);border-radius:var(--rs);font-size:11px;cursor:pointer;color:var(--muted)">✕</button>'
+    + '</div>';
+}
+
+function claimRandomQuest() {
+  if (!_currentRandomQuest || _currentRandomQuest.done) return;
+  _currentRandomQuest.done = true;
+  gainXp(_currentRandomQuest.xp);
+  bossDmg(10);
+  save();
+  dismissRandomQuest();
+  toast('+' + _currentRandomQuest.xp + ' XP — random quest done! 🎲', 'gold');
+}
+
+function dismissRandomQuest() {
+  _currentRandomQuest = null;
+  var banner = document.getElementById('random-quest-banner');
+  if (banner) banner.style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════
+// PATCH renderChallenges — show mood quests properly
+// ═══════════════════════════════════════════════════
+var _origRenderChallenges = renderChallenges;
+renderChallenges = function() {
+  _origRenderChallenges();
+  // Render mood-specific quests below mood picker
+  var mq = document.getElementById('chal-mood-quests');
+  if (!mq) return;
+  if (!S.mood) {
+    mq.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:4px 0">Select a mood above to see personalised quests.</div>';
+    return;
+  }
+  var quests = MOOD_QUESTS[S.mood] || [];
+  var h = '';
+  quests.slice(0, 3).forEach(function(q, i) {
+    var key = S.mood + '_' + i + '_' + today();
+    var done = S.moodQuestsDone && S.moodQuestsDone[key];
+    var mo = MOODS.find(function(m) { return m.id === S.mood; });
+    h += '<div class="qcard' + (done ? ' done' : '') + '" onclick="claimMoodQuest(\'' + S.mood + '\',' + i + ')">'
+       + '<div class="qi">' + (mo ? mo.icon : '🎯') + (done ? ' ✓' : '') + '</div>'
+       + '<div class="qinfo"><div class="qn">' + q.n + '</div>'
+       + '<div class="qd">' + (done ? 'Done — tap to undo' : 'Mood quest · +' + q.x + ' XP') + '</div></div>'
+       + '<div class="qxp">' + (done ? 'undo' : '+' + q.x + ' XP') + '</div>'
+       + '</div>';
+  });
+  mq.innerHTML = h || '<div style="font-size:12px;color:var(--muted)">No quests for this mood.</div>';
+};
+
+// ═══════════════════════════════════════════════════
+// PATCH go() to render quotes on each tab
+// ═══════════════════════════════════════════════════
+var _origGoQuotes = go;
+go = function(name, tab) {
+  _origGoQuotes(name, tab);
+  renderDailyQuotes();
+};
+
+// ═══════════════════════════════════════════════════
+// PATCH renderHeader — xp-bar no longer in header
+// ═══════════════════════════════════════════════════
+var _origRenderHeaderXP = renderHeader;
+renderHeader = function() {
+  _origRenderHeaderXP();
+  // xp-bar is now in stats view — update it if visible
+  var xpBar = document.getElementById('xp-bar');
+  var xpCap = document.getElementById('xp-cap');
+  if (xpBar && xpCap) {
+    var lo = xpBase(S.level);
+    var hi = xpBase(S.level + 1);
+    var pct = hi > lo ? Math.round((S.xp - lo) / (hi - lo) * 100) : 100;
+    xpBar.style.width = pct + '%';
+    xpCap.textContent = (S.xp - lo) + ' / ' + (hi - lo) + ' xp to level ' + (S.level + 1);
+  }
+};
+
+// ═══════════════════════════════════════════════════
+// INIT on load
+// ═══════════════════════════════════════════════════
+window.addEventListener('load', function() {
+  renderDailyQuotes();
+  // Init theme toggle button text
+  var btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = S.lightMode ? '🌙' : '☀️';
+  // Add moodQuestsDone to state if missing
+  if (!S.moodQuestsDone) S.moodQuestsDone = {};
+}, { once: true, capture: true });
 
 </script>
 
