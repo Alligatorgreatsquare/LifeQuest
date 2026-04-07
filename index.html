@@ -629,6 +629,9 @@ var S = {
   mapFilters:{category:'',priority:'',todayOnly:false},
 };
 
+// appState is a live reference to S — same object.
+var appState = S;
+
 // ── Character constants — must be defined before renderAll ──
 var CHAR_CLASSES = [
   {lv:1,  name:'Squire',       color:'#94a3b8', armor:'leather', weapon:'sword',    desc:'Your journey begins.'},
