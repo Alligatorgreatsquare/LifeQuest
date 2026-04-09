@@ -627,10 +627,29 @@ var S = {
   funXp:0,
   focusHabitIds:[],
   mapFilters:{category:'',priority:'',todayOnly:false},
+  brainDump:[],  // {id, text, originalText, createdAt}
 };
 
 // appState is a live reference to S — same object.
 var appState = S;
+
+// ── NULL-SAFE HELPERS ────────────────────────────────────────────────────────
+function safeSetHTML(el, html, name) {
+  if (!el) { if (name) console.warn('safeSetHTML: element not found —', name); return; }
+  el.innerHTML = html;
+}
+function safeSet(id, prop, val) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el[prop] = val;
+}
+function safeStyle(id, prop, val) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.style[prop] = val;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 
 // ── Character constants — must be defined before renderAll ──
 var CHAR_CLASSES = [
@@ -814,81 +833,97 @@ var _idc=Date.now(); function uid(){return 'h'+(++_idc);}
 // ══════════════════════════════════════════
 // STORAGE
 // ══════════════════════════════════════════
+var STORAGE_KEY = 'lifequest_data_v1';
+
 function save(){
-  try { localStorage.setItem('lq3', JSON.stringify(S)); }
-  catch(e) { console.error('LifeQuest save error:', e); }
-}
-function load(){
   try {
-    var d = localStorage.getItem('lq3');
-    if(d){
-      var p = JSON.parse(d);
-      for(var k in p) S[k] = p[k];
+    var payload = JSON.stringify(S);
+    localStorage.setItem(STORAGE_KEY, payload);   // canonical key
+    localStorage.setItem('lq3', payload);          // legacy compat
+    localStorage.setItem('lifequest_app_state', payload); // alt key compat
+  } catch(e) {
+    console.error('SAVE ERROR:', e);
+  }
+}
+function getDefaultData(){
+  return {
+    name:'Hero', xp:0, level:1, totalXp:0, gems:0,
+    streak:0, bestStreak:0, lastDate:'',
+    tasksDone:0, bossesSlain:0, focusSessions:0,
+    energy:10, maxEnergy:10, lastEnergyReset:'', energyEnabled:false,
+    minDailyTasks:4, hygieneCount:0,
+    routines:[], essentialHabitIds:[],
+    areas:[], skills:{}, theme:'', avatar:'🧙', charSkin:'s1',
+    dailyQuests:[], questsDate:'',
+    bonusQuests:[], bonusQuestsDate:'',
+    bossHp:100, bossMax:100, bossDefeated:false, bossWeek:'',
+    currentBossIdx:0,
+    calEvents:[],
+    inventory:{xpPotion:0, bossBomb:0, streakShield:0},
+    achievements:{},
+    consecutiveHabitsToday:0,
+    penaltiesApplied:[],
+    legendaryProgress:{},
+    timeTracked:{},
+    ownedCosmetics:[],
+    currentBossDmgDealt:0,
+    streakShieldActive:false,
+    lifeSkills:{},
+    quickCaptures:[],
+    brainDump:[],
+    undoStack:[],
+    mood:'',
+    moodHistory:[],
+    moodQuestsDone:{},
+    sideQuestsDate:'', sideQuests:[],
+    funXp:0,
+    focusHabitIds:[],
+    mapFilters:{category:'', priority:'', todayOnly:false},
+    lightMode:false,
+    _essOpenSections:{},
+  };
+}
+
+function load(){
+  var raw = null;
+  // Try all three keys, newest-canonical first
+  try { raw = localStorage.getItem(STORAGE_KEY); } catch(e) {}
+  if(!raw) { try { raw = localStorage.getItem('lq3'); } catch(e) {} }
+  if(!raw) { try { raw = localStorage.getItem('lifequest_app_state'); } catch(e) {} }
+
+  var parsed = null;
+  if(raw){
+    try {
+      parsed = JSON.parse(raw);
+      if(typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)){
+        console.error('LOAD ERROR: saved data is not a plain object — using defaults');
+        parsed = null;
+      }
+    } catch(e) {
+      console.error('LOAD ERROR:', e, '— using defaults');
+      parsed = null;
     }
-  } catch(e){ console.error('LifeQuest load error:', e); }
+  }
 
-  // ── Defaults / migration: add any key that might be missing from older saves ──
-  if(S.name === undefined)               S.name = 'Hero';
-  if(S.xp === undefined)                 S.xp = 0;
-  if(S.level === undefined)              S.level = 1;
-  if(S.totalXp === undefined)            S.totalXp = 0;
-  if(S.gems === undefined)               S.gems = 0;
-  if(S.streak === undefined)             S.streak = 0;
-  if(S.bestStreak === undefined)         S.bestStreak = 0;
-  if(!S.lastDate)                        S.lastDate = '';
-  if(S.tasksDone === undefined)          S.tasksDone = 0;
-  if(S.bossesSlain === undefined)        S.bossesSlain = 0;
-  if(S.focusSessions === undefined)      S.focusSessions = 0;
-  if(S.energy === undefined)             S.energy = 10;
-  if(!S.maxEnergy)                       S.maxEnergy = 10;
-  if(!S.lastEnergyReset)                 S.lastEnergyReset = '';
-  if(S.energyEnabled === undefined)      S.energyEnabled = false;
-  if(!S.minDailyTasks)                   S.minDailyTasks = 4;
-  if(S.hygieneCount === undefined)       S.hygieneCount = 0;
-  if(!S.routines)                        S.routines = [];
-  if(!S.essentialHabitIds)              S.essentialHabitIds = [];
-  if(!S.areas)                           S.areas = [];
-  if(!S.skills)                          S.skills = {};
-  if(!S.theme)                           S.theme = '';
-  if(!S.avatar)                          S.avatar = '🧙';
-  if(!S.charSkin)                        S.charSkin = 's1';
-  if(!S.dailyQuests)                     S.dailyQuests = [];
-  if(!S.questsDate)                      S.questsDate = '';
-  if(!S.bonusQuests)                     S.bonusQuests = [];
-  if(!S.bonusQuestsDate)                 S.bonusQuestsDate = '';
-  if(S.bossHp === undefined)             S.bossHp = 100;
-  if(!S.bossMax)                         S.bossMax = 100;
-  if(S.bossDefeated === undefined)       S.bossDefeated = false;
-  if(!S.bossWeek)                        S.bossWeek = '';
-  if(S.currentBossIdx === undefined)     S.currentBossIdx = 0;
-  if(!S.calEvents)                       S.calEvents = [];
-  if(!S.inventory)                       S.inventory = {xpPotion:0, bossBomb:0, streakShield:0};
-  if(!S.achievements)                    S.achievements = {};
-  if(S.consecutiveHabitsToday===undefined) S.consecutiveHabitsToday = 0;
-  if(!S.penaltiesApplied)               S.penaltiesApplied = [];
-  if(!S.legendaryProgress)              S.legendaryProgress = {};
-  if(!S.timeTracked)                    S.timeTracked = {};
-  if(!S.ownedCosmetics)                 S.ownedCosmetics = [];
-  if(S.currentBossDmgDealt===undefined) S.currentBossDmgDealt = 0;
-  if(S.streakShieldActive===undefined)  S.streakShieldActive = false;
-  if(!S.lifeSkills)                     S.lifeSkills = {};
-  if(!S.quickCaptures)                  S.quickCaptures = [];
-  if(!S.undoStack)                      S.undoStack = [];
-  if(!S.mood)                           S.mood = '';
-  if(!S.moodHistory)                    S.moodHistory = [];
-  if(!S.sideQuestsDate)                 S.sideQuestsDate = '';
-  if(!S.sideQuests)                     S.sideQuests = [];
-  if(S.funXp === undefined)             S.funXp = 0;
-  if(!S.focusHabitIds)                  S.focusHabitIds = [];
-  if(!S.mapFilters)                     S.mapFilters = {category:'', priority:'', todayOnly:false};
-  if(S.lightMode===undefined)            S.lightMode = false;
+  // Merge saved data over defaults so new keys always have safe values
+  var defaults = getDefaultData();
+  if(parsed){
+    for(var k in defaults){
+      if(!(k in parsed)) parsed[k] = defaults[k];
+    }
+    // Copy everything from parsed into S
+    for(var k in parsed) S[k] = parsed[k];
+  }
+  // (if parsed is null, S already has the defaults set at declaration time)
 
-  // Structural integrity: ensure every area and sub has required arrays
-  S.areas.forEach(function(a){
-    if(!a.habits) a.habits = [];
-    if(!a.subs)   a.subs   = [];
-    a.subs.forEach(function(s){ if(!s.habits) s.habits = []; });
-  });
+  // Structural integrity: areas and subs must have habit/sub arrays
+  if(S.areas && S.areas.length){
+    S.areas.forEach(function(a){
+      if(!a.habits) a.habits = [];
+      if(!a.subs)   a.subs   = [];
+      a.subs.forEach(function(sub){ if(!sub.habits) sub.habits = []; });
+    });
+  }
 }
 // ══════════════════════════════════════════
 // BOOT
@@ -909,22 +944,23 @@ function scheduleRender(){
   });
 }
 
-window.onload = function(){
-  load();
-  checkDay(); checkBoss();
-  renderAll();
-  var nameField = document.getElementById('name-field');
-  if(nameField) nameField.value = S.name;
-  if(S.theme) document.body.classList.add('t-'+S.theme);
-  if(S.lightMode){ document.body.classList.add('light-mode'); var btn=document.getElementById('theme-toggle'); if(btn) btn.textContent='🌙'; }
-  checkSeasonal();
-  // Activate the first tab (Planner) and render it
-  var firstTab = document.querySelector('#nav .tab');
-  go('planner', firstTab);
-  // Also render settings so its elements are populated
-  renderSettings();
-  renderDailyProgress();
-};
+document.addEventListener('DOMContentLoaded', function(){
+  try {
+    load();
+    checkDay(); checkBoss();
+    renderAll();
+    var nameField = document.getElementById('name-field');
+    if(nameField) nameField.value = S.name;
+    if(S.theme) document.body.classList.add('t-'+S.theme);
+    if(S.lightMode){ document.body.classList.add('light-mode'); var btn=document.getElementById('theme-toggle'); if(btn) btn.textContent='🌙'; }
+    checkSeasonal();
+    var firstTab = document.querySelector('#nav .tab');
+    go('planner', firstTab);
+    renderSettings();
+    renderDailyProgress();
+    renderBrainDumpAll();
+  } catch(e) { console.error('LifeQuest init error:', e); }
+});
 
 function today(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 function weekKey(){ var d=new Date(),dy=d.getDay(),df=d.getDate()-dy; var m=new Date(d.setDate(df)); return m.getFullYear()+'-'+(m.getMonth()+1)+'-'+m.getDate(); }
@@ -1063,12 +1099,12 @@ function floatPenalty(txt,x,y){
   document.body.appendChild(el); setTimeout(function(){el.remove();},1200);
 }
 function showLvlUp(lv){
-  document.getElementById('lvl-num').textContent='Level '+lv;
+  safeSet('lvl-num','textContent','Level '+lv);
   var el=document.getElementById('lvl-toast'); el.classList.add('on');
   setTimeout(function(){el.classList.remove('on');},2300);
 }
 function showRankUp(rankName){
-  document.getElementById('rank-new').textContent=rankName;
+  safeSet('rank-new','textContent',rankName);
   var el=document.getElementById('rank-toast'); el.classList.add('on');
   setTimeout(function(){el.classList.remove('on');},2500);
 }
@@ -1083,15 +1119,15 @@ function getRankIdx(){ var ri=0; for(var i=0;i<RANKS.length;i++) if(S.level>=RAN
 function renderAll(){ renderHeader(); renderQuests(); renderHabits(); renderBoss(); renderSkills(); renderStats(); renderShop(); renderInventory(); renderCalendar(); renderAchievements(); renderPenaltyBanner(); if(typeof renderCharacter==='function')renderCharacter(); if(typeof renderCalendarView==='function') renderCalendarView(); if(typeof renderDailyProgress==='function') renderDailyProgress(); }
 
 function renderHeader(){
-  document.getElementById('player-name').textContent = S.name;
-  document.getElementById('hdr-lv').textContent = S.level;
-  document.getElementById('rank-tag').textContent = getRank();
-  document.getElementById('streak-num').textContent = S.streak;
+  safeSet('player-name','textContent',S.name);
+  safeSet('hdr-lv','textContent',S.level);
+  safeSet('rank-tag','textContent',getRank());
+  safeSet('streak-num','textContent',S.streak);
   // xp bar
   var lo=xpBase(S.level), hi=xpBase(S.level+1);
   var pct=hi>lo?Math.round((S.xp-lo)/(hi-lo)*100):100;
-  document.getElementById('xp-bar').style.width=pct+'%';
-  document.getElementById('xp-cap').textContent=(S.xp-lo)+' / '+(hi-lo)+' xp';
+  safeStyle('xp-bar','width',pct+'%');
+  safeSet('xp-cap','textContent',(S.xp-lo)+' / '+(hi-lo)+' xp');
   // update char ring if visible
   var ring=document.getElementById('char-lvl-ring'); if(ring) ring.textContent='Lv '+S.level+' '+getCurrentClass().name;
   // streak multiplier
@@ -1102,7 +1138,7 @@ function renderHeader(){
   // energy
   var energyRowEl=document.getElementById('energy-row');
   if(energyRowEl) energyRowEl.style.display=S.energyEnabled?'flex':'none';
-  document.getElementById('nrg-num').textContent=S.energy+'/'+S.maxEnergy;
+  safeSet('nrg-num','textContent',S.energy+'/'+S.maxEnergy);
 }
 
 function renderPenaltyBanner(){
@@ -1120,7 +1156,7 @@ function renderPenaltyBanner(){
     if(!isDone) calIncomplete.push(e.name);
   });
   if(calIncomplete.length===0){ area.innerHTML=''; return; }
-  area.innerHTML='<div class="penalty-banner">📅 '+calIncomplete.length+' calendar task'+(calIncomplete.length>1?'s':'')+' remaining today</div>';
+  safeSetHTML(area,'<div class="penalty-banner">📅 '+calIncomplete.length+' calendar task'+(calIncomplete.length>1?'s':'')+' remaining today</div>','area');
 }
 
 function renderQuests(){
@@ -1133,7 +1169,7 @@ function renderQuests(){
       +'<div class="qinfo"><div class="qn">'+q.name+'</div><div class="qd">'+q.desc+'</div></div>'
       +'<div class="qxp">+'+q.xp+' XP<small>'+q.gems+'💎</small></div></div>';
   });
-  c.innerHTML=h;
+  safeSetHTML(c,h,'daily-quests');
   // bonus
   var bc=document.getElementById('bonus-quests'); h='';
   if(!S.bonusQuests.length) bc.innerHTML='<div style="font-size:12px;color:var(--muted);padding:4px 0">No bonus quests today.</div>';
@@ -1143,7 +1179,7 @@ function renderQuests(){
       +'<div class="qinfo"><div class="qn">'+q.name+'</div><div class="qd">'+q.desc+'</div></div>'
       +'<div class="qxp">+'+q.xp+' XP<small>+'+q.gems+'💎</small></div></div>';
   });
-  bc.innerHTML=h;
+  safeSetHTML(bc,h,'bonus-quests');
   // legendary
   var lc=document.getElementById('legendary-quests'); h='';
   LEGENDARY_HABITS.forEach(function(lh,i){
@@ -1156,7 +1192,7 @@ function renderQuests(){
       +'<div style="height:3px;background:var(--border);border-radius:2px;margin-top:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:#a855f7;border-radius:2px;transition:width .4s"></div></div></div>'
       +'<div class="qxp">'+lh.xp+' XP<small>'+lh.gems+'💎</small></div></div>';
   });
-  lc.innerHTML=h;
+  safeSetHTML(lc,h,'lc');
 }
 
 function renderHabits(){
@@ -1165,7 +1201,7 @@ function renderHabits(){
   if(!S.areas.length){ c.innerHTML='<div style="color:var(--muted);font-size:12px;padding:4px 0 12px">No sections yet. Add one below.</div>'; return; }
   var h='';
   for(var ai=0;ai<S.areas.length;ai++) h+=renderArea(S.areas[ai],ai);
-  c.innerHTML=h;
+  safeSetHTML(c,h,'areas-root');
 }
 
 function renderArea(area, ai){
@@ -1277,7 +1313,7 @@ function renderSkills(){
       +'<div class="sk-info"><div class="sk-name">'+sk.name+'</div><div class="sk-desc">'+sk.desc+'</div><div class="sk-req">'+sk.req+'</div></div>'
       +'<span class="sk-badge '+(on?'on':'off')+'">'+(on?'ACTIVE':'LOCKED')+'</span></div>';
   });
-  sl.innerHTML=h;
+  safeSetHTML(sl,h,'sl');
 }
 
 function renderAchievements(){
@@ -1291,12 +1327,12 @@ function renderAchievements(){
       +'<div class="ach-desc">'+ach.desc+'</div>'
       +(earned?'<div class="ach-badge">EARNED</div>':'')+'</div>';
   });
-  c.innerHTML=h;
+  safeSetHTML(c,h,'c');
 }
 
 function renderStats(){
   var sg=document.getElementById('stat-grid');
-  sg.innerHTML=statTile(S.totalXp,'Total XP')+statTile(S.bestStreak,'Best Streak')+statTile(S.tasksDone,'Tasks Done')+statTile(S.bossesSlain,'Bosses Slain')+statTile(S.gems,'Gems')+statTile(S.focusSessions,'Focus Sessions');
+  safeSetHTML(sg,statTile(S.totalXp,'Total XP')+statTile(S.bestStreak,'Best Streak')+statTile(S.tasksDone,'Tasks Done')+statTile(S.bossesSlain,'Bosses Slain')+statTile(S.gems,'Gems')+statTile(S.focusSessions,'Focus Sessions'),'stat-grid');
   // time tracked
   var tt=document.getElementById('time-tracked-list'); var h='';
   Object.keys(S.timeTracked).forEach(function(type){
@@ -1307,7 +1343,7 @@ function renderStats(){
       +'<span>'+label+'</span><span style="color:var(--accent);font-weight:600">'+hrs+'h '+mins+'m</span></div>';
   });
   if(!h) h='<div style="font-size:12px;color:var(--muted);padding:6px 0">Complete habits to track time.</div>';
-  tt.innerHTML=h;
+  safeSetHTML(tt,h,'tt');
   // rank ladder
   var rl=document.getElementById('rank-ladder'); h='';
   var curRankIdx=getRankIdx();
@@ -1322,7 +1358,7 @@ function renderStats(){
       +(isCurrent?'<div class="rank-progress-bar"><div class="rank-progress-fill" style="width:'+pct+'%"></div></div><div style="font-size:9px;color:var(--muted);margin-top:2px">'+pct+'% to next rank</div>':'')+'</div>'
       +'<div class="rank-pct">Lv.'+r.lv+'</div>'+(reached?'<span style="font-size:10px;color:var(--accent)">✓</span>':'')+'</div>';
   }
-  rl.innerHTML=h;
+  safeSetHTML(rl,h,'rl');
 }
 
 function statTile(v,l){ return '<div class="stat-tile"><div class="stat-num">'+v+'</div><div class="stat-lbl">'+l+'</div></div>'; }
@@ -1337,7 +1373,7 @@ function renderShop(){
       +(qty>0?'<div style="font-size:10px;color:var(--accent)">Owned: '+qty+'</div>':'')+'</div>'
       +'<div class="shop-price">'+item.price+'💎<small>gems</small></div></div>';
   });
-  si.innerHTML=h;
+  safeSetHTML(si,h,'si');
   var sc=document.getElementById('shop-cosmetics'); h='';
   SHOP_COSMETICS.forEach(function(cos){
     var owned=S.ownedCosmetics.indexOf(cos.id)>=0;
@@ -1347,8 +1383,8 @@ function renderShop(){
       +(owned?'<div style="font-size:10px;color:var(--green)">✓ Owned</div>':'')+'</div>'
       +'<div class="shop-price">'+(owned?'✓':cos.price+'💎')+'</div></div>';
   });
-  sc.innerHTML=h;
-  document.getElementById('gem-count').textContent=S.gems;
+  safeSetHTML(sc,h,'sc');
+  safeSet('gem-count','textContent',S.gems);
 }
 
 function renderInventory(){
@@ -1366,7 +1402,7 @@ function renderInventory(){
       +'<button class="inv-use-btn" onclick="useItem(\''+item.id+'\')">Use</button></div>';
   });
   if(!h) h='<div style="font-size:12px;color:var(--muted);padding:4px 0">No items. Buy from the shop 💎</div>';
-  c.innerHTML=h;
+  safeSetHTML(c,h,'c');
 }
 
 function renderCalendar(){
@@ -1623,15 +1659,15 @@ function checkAchievements(){
 // ══════════════════════════════════════════
 // FOCUS
 // ══════════════════════════════════════════
-function openFocus(){ document.getElementById('focus-screen').classList.add('on'); resetFocus(); }
-function closeFocus(){ document.getElementById('focus-screen').classList.remove('on'); if(focusTimer){clearInterval(focusTimer);focusTimer=null;} focusRunning=false; document.getElementById('f-start-btn').textContent='Start'; }
+function openFocus(){ var _fs=document.getElementById('focus-screen'); if(!_fs) return; _fs.classList.add('on'); resetFocus(); }
+function closeFocus(){ var _fs=document.getElementById('focus-screen'); if(!_fs) return; _fs.classList.remove('on'); if(focusTimer){clearInterval(focusTimer);focusTimer=null;} focusRunning=false; document.getElementById('f-start-btn').textContent='Start'; }
 function resetFocus(){ focusSecs=25*60; updateFocusUI(); }
 function toggleFocus(){
   if(focusRunning){
     clearInterval(focusTimer);focusTimer=null;focusRunning=false;
-    document.getElementById('f-start-btn').textContent='Resume';
+    safeSet('f-start-btn','textContent','Resume');
   } else {
-    focusRunning=true; document.getElementById('f-start-btn').textContent='Pause';
+    focusRunning=true; safeSet('f-start-btn','textContent','Pause');
     focusTimer=setInterval(function(){
       focusSecs--;updateFocusUI();
       if(focusSecs<=0){
@@ -1642,7 +1678,7 @@ function toggleFocus(){
         bossDmg(20);
         checkSkillUnlocks(); checkAchievements();
         toast('Focus complete! +'+xp+' XP, boss -20 HP');
-        document.getElementById('f-start-btn').textContent='Done ✓';
+        safeSet('f-start-btn','textContent','Done ✓');
         save(); renderStats();
       }
     },1000);
@@ -1650,16 +1686,19 @@ function toggleFocus(){
 }
 function updateFocusUI(){
   var m=Math.floor(focusSecs/60),s=focusSecs%60;
-  document.getElementById('f-timer').textContent=(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
-  document.getElementById('f-prog-circ').style.strokeDashoffset=Math.round(502*(focusSecs/(25*60)));
+  safeSet('f-timer','textContent',(m<10?'0':'')+m+':'+(s<10?'0':'')+s);
+  safeStyle('f-prog-circ','strokeDashoffset',Math.round(502*(focusSecs/(25*60))));
 }
 
 // ══════════════════════════════════════════
 // MODALS
 // ══════════════════════════════════════════
-function openModal(id){ document.getElementById(id).classList.add('on'); setTimeout(function(){ var inp=document.querySelector('#'+id+' .m-input'); if(inp){inp.value='';inp.focus();} },120); }
-function closeModal(id){ document.getElementById(id).classList.remove('on'); }
-document.querySelectorAll('.mbg').forEach(function(el){ el.addEventListener('click',function(e){ if(e.target===this) this.classList.remove('on'); }); });
+function openModal(id){ var _m=document.getElementById(id); if(!_m){console.warn('openModal: not found —',id);return;} _m.classList.add('on'); setTimeout(function(){ var inp=_m.querySelector('input,textarea'); if(inp) inp.focus(); },100); }
+function closeModal(id){ var _m=document.getElementById(id); if(_m) _m.classList.remove('on'); }
+var _mbgEls = document.querySelectorAll('.mbg');
+if(_mbgEls && _mbgEls.length) {
+  _mbgEls.forEach(function(el){ if(el) el.addEventListener('click',function(e){ if(e.target===this) this.classList.remove('on'); }); });
+}
 
 function openAddSub(ai){ pendingAreaIdx=ai; openModal('m-sub'); }
 function openAddHabit(ai,si){ pendingHabitTarget={ai:ai,si:si}; openModal('m-habit'); }
@@ -2009,7 +2048,7 @@ function renderSettings(){
           +'<div style="font-size:10px;color:var(--muted);margin:0 4px">'+r.diff+'</div>'
           +'<div class="r-del" onclick="event.stopPropagation();delRoutineIdx('+ri+')">✕</div></div>';
       });
-      rl.innerHTML=h;
+      safeSetHTML(rl,h,'rl');
     }
   }
 
@@ -2045,7 +2084,7 @@ function renderSettings(){
         }
         h+='</div>';
       });
-      el.innerHTML=h;
+      safeSetHTML(el,h,'el');
     }
   }
 }
@@ -2088,8 +2127,10 @@ function toggleCalCustom(idx){
 // INIT CALL on window load
 // ═══════════════════════════════════════════════════
 window.addEventListener('load',function(){
-  if(!S._essOpenSections) S._essOpenSections={};
-  renderSettings(); renderDailyProgress(); renderEnergyToggle();
+  try {
+    if(!S._essOpenSections) S._essOpenSections={};
+    renderSettings(); renderDailyProgress(); renderEnergyToggle();
+  } catch(e) { console.error('LifeQuest settings init error:', e); }
 },{once:true,capture:true});
 
 // ═══════════════════════════════════════════════════
@@ -2100,7 +2141,7 @@ function priDot(p){
   return '<span class="pri-dot" style="background:'+c+'"></span>';
 }
 function selectPriority(p){
-  document.getElementById('m-habit-priority').value=p;
+  safeSet('m-habit-priority','value',p);
   document.querySelectorAll('.pri-btn').forEach(function(b){
     b.classList.toggle('sel', b.getAttribute('data-pri')===p);
     b.style.opacity = b.getAttribute('data-pri')===p ? '1' : '0.55';
@@ -2134,7 +2175,7 @@ function showUndoToast(label){
   var el=document.createElement('div');
   el.id='undo-toast-el';
   el.className='undo-toast';
-  el.innerHTML='<span>'+label+'</span><span class="undo-btn" onclick="doUndo()">UNDO</span>';
+  safeSetHTML(el,'<span>'+label+'</span><span class="undo-btn" onclick="doUndo()">UNDO</span>','el');
   document.body.appendChild(el);
   _undoTimer=setTimeout(function(){if(el.parentNode)el.remove();},5000);
 }
@@ -2261,7 +2302,7 @@ function renderMoodView(){
       +'<span class="mood-icon">'+m.icon+'</span>'+m.label+'</div>';
   });
   h+='</div>';
-  mp.innerHTML=h;
+  safeSetHTML(mp,h,'mood-picker');
 
   // Mood quests
   var mq=document.getElementById('mood-quests');
@@ -2276,7 +2317,7 @@ function renderMoodView(){
           +'<div class="qinfo"><div class="qn">'+q.n+'</div><div class="qd">Mood quest</div></div>'
           +'<div class="qxp">+'+q.x+' XP</div></div>';
       });
-      mq.innerHTML=h2;
+      safeSetHTML(mq,h2,'mood-quests');
     }
   }
 
@@ -2292,7 +2333,7 @@ function renderMoodView(){
           +'<div style="font-weight:600">'+s.icon+' '+s.name+'</div>'
           +'<div style="font-size:11px;color:var(--muted);margin-top:2px">'+s.reason+'</div></div>';
       });
-      ms.innerHTML=h3;
+      safeSetHTML(ms,h3,'mood-suggestions');
     }
   }
 
@@ -2341,7 +2382,7 @@ function renderSideQuests(){
       +'<div class="qinfo"><div class="qn">'+q.name+'</div><div class="qd">'+q.desc+'</div></div>'
       +'<div class="qxp">+'+q.xp+' XP</div></div>';
   });
-  c.innerHTML=h||'<div style="font-size:12px;color:var(--muted)">Side quests refresh daily.</div>';
+  safeSetHTML(c,h||'<div style="font-size:12px;color:var(--muted)">Side quests refresh daily.</div>','c');
 }
 
 function claimSideQuest(i){
@@ -2567,7 +2608,7 @@ function showMapTooltip(node,x,y){
     content+='<br>'+node.priority+' priority';
     content+='<br>'+(node.done?'✓ Done today':'Not done');
   }
-  tt.innerHTML=content;
+  safeSetHTML(tt,content,'map-tooltip');
   tt.style.display='block';
   tt.style.left=(x+12)+'px'; tt.style.top=(y+12)+'px';
 }
@@ -2583,7 +2624,7 @@ function renderMapFilters(){
     h+='<button class="map-filter-btn'+(filt.category===type?' on':'')+'" onclick="toggleMapFilter(\'cat_'+type+'\')" style="font-size:10px">'+(SECTION_SKILL[type]?SECTION_SKILL[type].split(' ')[0]:type)+'</button>';
   });
   h+='<button class="map-filter-btn" onclick="resetMap()" style="font-size:10px">Reset</button>';
-  c.innerHTML=h;
+  safeSetHTML(c,h,'c');
 }
 function toggleMapFilter(key){
   if(!S.mapFilters) S.mapFilters={};
@@ -2659,7 +2700,7 @@ function renderDashboard(){
     h+='</div>';
   }
 
-  c.innerHTML=h;
+  safeSetHTML(c,h,'c');
 }
 
 // ═══════════════════════════════════════════════════
@@ -2684,7 +2725,7 @@ function renderFocusHabitList(){
       +'<div class="fh-check">'+(sel?'✓':'')+'</div>'
       +'<span style="font-size:12px">'+hab.name+' <span style="font-size:10px;color:var(--muted)">'+hab.areaName+'</span></span></div>';
   });
-  c.innerHTML=h;
+  safeSetHTML(c,h,'c');
 }
 
 function toggleFocusHabit(id){
@@ -2856,7 +2897,7 @@ function renderCalendarView(){
     });
   }
 
-  todayEl.innerHTML=h;
+  safeSetHTML(todayEl,h,'todayEl');
 
   // Clear the "all list" section (not used)
   var allEl=document.getElementById('cal-all-list');
@@ -2907,97 +2948,133 @@ function renderPlanner(){
 // CHALLENGES VIEW (quests + mood combined)
 // ═══════════════════════════════════════════════════
 function renderChallenges(){
-  // Ensure quests exist before rendering
-  genQuests(); genSideQuests();
-  // Daily quests
-  var cq = document.getElementById('chal-quests');
-  if(cq){
-    var h='';
-    (S.dailyQuests||[]).forEach(function(q,i){
-      h+='<div class="qcard'+(q.done?' done':'')+'" onclick="claimQuest('+i+')">'
-        +'<div class="qi">'+q.ico+(q.done?' ✓':'')+'</div>'
-        +'<div class="qinfo"><div class="qn">'+q.name+'</div><div class="qd">'+q.desc+'</div></div>'
-        +'<div class="qxp">+'+q.xp+' XP</div></div>';
-    });
-    cq.innerHTML=h||'<div style="font-size:12px;color:var(--muted)">No quests yet.</div>';
-  }
-  // Bonus quests removed
-  // Mood picker — use data attributes, wire clicks via event delegation
-  var mp = document.getElementById('chal-mood-picker');
-  if(mp){
-    var h='<div class="mood-grid">';
-    MOODS.forEach(function(m){
-      h+='<div class="mood-btn'+(S.mood===m.id?' sel':'')+'" data-mood="'+m.id+'">'
-        +'<span class="mood-icon">'+m.icon+'</span>'+m.label+'</div>';
-    });
-    h+='</div>';
-    mp.innerHTML=h;
-    // Attach click handler via event delegation (works in sandboxed iframes)
-    mp.onclick=function(e){
-      var btn=e.target.closest('[data-mood]');
-      if(btn) setMood(btn.getAttribute('data-mood'));
-    };
-  }
-  // Side quests
-  genSideQuests();
-  var sq = document.getElementById('chal-side-quests');
-  if(sq){
-    var h='';
-    (S.sideQuests||[]).forEach(function(q,i){
-      h+='<div class="qcard'+(q.done?' done':'')+'" onclick="claimSideQuest('+i+')">'
-        +'<div class="qi">'+q.icon+(q.done?' ✓':'')+'</div>'
-        +'<div class="qinfo"><div class="qn">'+q.name+'</div><div class="qd">'+q.desc+'</div></div>'
-        +'<div class="qxp">+'+q.xp+' XP</div></div>';
-    });
-    sq.innerHTML=h||'<div style="font-size:12px;color:var(--muted)">Side quests refresh daily.</div>';
-  }
-  // Suggestions
-  var ms = document.getElementById('chal-suggestions');
-  if(ms){
-    var sugs=getSuggestions();
-    if(!sugs.length){ ms.innerHTML='<div style="font-size:12px;color:var(--muted)">Set a mood to get suggestions.</div>'; }
-    else{
+  try {
+    // Ensure quests exist before rendering
+    genQuests(); genSideQuests();
+    // Daily quests
+    var cq = document.getElementById('chal-quests');
+    if(cq){
       var h='';
-      sugs.forEach(function(s){
-        h+='<div class="view-card" style="padding:10px 14px;margin-bottom:8px">'
-          +'<div style="font-size:13px;font-weight:600">'+s.icon+' '+s.name+'</div>'
-          +'<div style="font-size:11px;color:var(--muted);margin-top:3px">'+s.reason+'</div></div>';
+      (S.dailyQuests||[]).forEach(function(q,i){
+        h+='<div class="qcard'+(q.done?' done':'')+'" onclick="claimQuest('+i+')">'
+          +'<div class="qi">'+q.ico+(q.done?' ✓':'')+'</div>'
+          +'<div class="qinfo"><div class="qn">'+q.name+'</div><div class="qd">'+q.desc+'</div></div>'
+          +'<div class="qxp">+'+q.xp+' XP</div></div>';
       });
-      ms.innerHTML=h;
+      safeSetHTML(cq,h||'<div style="font-size:12px;color:var(--muted)">No quests yet.</div>','chal-quests');
     }
-  }
+    // Bonus quests removed
+    // Mood picker — use data attributes, wire clicks via event delegation
+    var mp = document.getElementById('chal-mood-picker');
+    if(mp){
+      var h='<div class="mood-grid">';
+      MOODS.forEach(function(m){
+        h+='<div class="mood-btn'+(S.mood===m.id?' sel':'')+'" data-mood="'+m.id+'">'
+          +'<span class="mood-icon">'+m.icon+'</span>'+m.label+'</div>';
+      });
+      h+='</div>';
+      safeSetHTML(mp,h,'mood-picker');
+      // Attach click handler via event delegation (works in sandboxed iframes)
+      mp.onclick=function(e){
+        var btn=e.target.closest('[data-mood]');
+        if(btn) setMood(btn.getAttribute('data-mood'));
+      };
+    }
+    // Side quests
+    genSideQuests();
+    var sq = document.getElementById('chal-side-quests');
+    if(sq){
+      var h='';
+      (S.sideQuests||[]).forEach(function(q,i){
+        h+='<div class="qcard'+(q.done?' done':'')+'" onclick="claimSideQuest('+i+')">'
+          +'<div class="qi">'+q.icon+(q.done?' ✓':'')+'</div>'
+          +'<div class="qinfo"><div class="qn">'+q.name+'</div><div class="qd">'+q.desc+'</div></div>'
+          +'<div class="qxp">+'+q.xp+' XP</div></div>';
+      });
+      safeSetHTML(sq,h||'<div style="font-size:12px;color:var(--muted)">Side quests refresh daily.</div>','chal-side-quests');
+    }
+    // Suggestions
+    var ms = document.getElementById('chal-suggestions');
+    if(ms){
+      var sugs=getSuggestions();
+      if(!sugs.length){ ms.innerHTML='<div style="font-size:12px;color:var(--muted)">Set a mood to get suggestions.</div>'; }
+      else{
+        var h='';
+        sugs.forEach(function(s){
+          h+='<div class="view-card" style="padding:10px 14px;margin-bottom:8px">'
+            +'<div style="font-size:13px;font-weight:600">'+s.icon+' '+s.name+'</div>'
+            +'<div style="font-size:11px;color:var(--muted);margin-top:3px">'+s.reason+'</div></div>';
+        });
+        safeSetHTML(ms,h,'chal-suggestions');
+      }
+    }
+  
+  } catch(e) { console.error('renderChallenges error:', e); }
 }
 
 // ═══════════════════════════════════════════════════
 // JOURNEY VIEW (hero + boss combined)
 // ═══════════════════════════════════════════════════
 function renderJourney(){
-  // Skills
-  var jsk = document.getElementById('journey-skills');
-  if(jsk){ checkSkillUnlocks(); renderSkills(); var skl=document.getElementById('skill-list'); if(skl) jsk.innerHTML=skl.innerHTML; }
-  // Life Skills
-  var jls = document.getElementById('journey-life-skills');
-  if(jls){ renderLifeSkills(); var lsl=document.getElementById('life-skills-list'); if(lsl) jls.innerHTML=lsl.innerHTML; }
+  try {
+    // Skills
+    var jsk = document.getElementById('journey-skills');
+    if(jsk){ checkSkillUnlocks(); renderSkills(); var skl=document.getElementById('skill-list'); if(skl) jsk.innerHTML=skl.innerHTML; }
+    // Life Skills
+    var jls = document.getElementById('journey-life-skills');
+    if(jls){ renderLifeSkills(); var lsl=document.getElementById('life-skills-list'); if(lsl) jls.innerHTML=lsl.innerHTML; }
+  
+  } catch(e) { console.error('renderJourney error:', e); }
 }
 
 // ═══════════════════════════════════════════════════
 // BRAIN DUMP
 // ═══════════════════════════════════════════════════
 var _brainDumpItems=[];
+function cleanBrainText(t){
+  t = t.trim();
+  // Remove leading list markers
+  t = t.replace(/^[-*•·#>]+\s*/, '');
+  // Capitalise first letter of each sentence
+  t = t.replace(/(^\s*|[.!?]\s+)([a-z])/g, function(m, pre, ch){ return pre + ch.toUpperCase(); });
+  // Capitalise very first character
+  if(t.length) t = t.charAt(0).toUpperCase() + t.slice(1);
+  // Add full stop if sentence doesn't end with punctuation
+  if(t.length && !/[.!?…]$/.test(t)) t = t + '.';
+  return t;
+}
+
 function parseBrainDump(){
-  var raw = document.getElementById('brain-dump-input');
-  if(!raw || !raw.value.trim()) return;
-  var lines = raw.value.split('\n');
-  var added = 0;
-  lines.forEach(function(l){
-    var t = l.trim().replace(/^[-*•·]+\s*/, '');
-    if(t){
-      if(!S.quickCaptures) S.quickCaptures = [];
-      S.quickCaptures.push({text: t, ts: Date.now(), converted: false});
+  try {
+    var raw = document.getElementById('brain-dump-input');
+    if(!raw || !raw.value.trim()) return;
+    var lines = raw.value.split('\n');
+    var added = 0;
+    if(!S.quickCaptures) S.quickCaptures = [];
+    if(!S.brainDump)     S.brainDump     = [];
+    lines.forEach(function(l){
+      var original = l.trim();
+      if(!original) return;
+      var cleaned = cleanBrainText(original);
+      var entry = {
+        id:           'bd_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+        text:         cleaned,
+        originalText: original,
+        createdAt:    Date.now()
+      };
+      S.brainDump.push(entry);
+      // Also keep in quickCaptures for backward-compat with + button captures
+      S.quickCaptures.push({text: cleaned, originalText: original, ts: entry.createdAt, converted: false, bdId: entry.id});
       added++;
+    });
+    if(added){
+      raw.value = '';
+      save();
+      renderBrainDumpAll();
+      toast(added + ' item' + (added>1?'s':'') + ' saved');
     }
-  });
-  if(added){ raw.value = ''; save(); renderBrainDumpAll(); toast(added + ' item' + (added>1?'s':'') + ' saved'); }
+  
+  } catch(e) { console.error('parseBrainDump error:', e); }
 }
 
 function renderBrainDumpTasks(){
@@ -3019,7 +3096,7 @@ function renderBrainDumpTasks(){
     }
     h += '</div>';
   });
-  c.innerHTML = h;
+  safeSetHTML(c,h,'c');
 }
 // ═══════════════════════════════════════════════════
 // QUICK CAPTURE (+ button)
@@ -3047,28 +3124,49 @@ function saveQuickCapture(){
 // BRAIN DUMP: show quick captures too
 // ═══════════════════════════════════════════════════
 function renderBrainDumpAll(){
-  var c = document.getElementById('brain-dump-quick-list');
-  if(!c) return;
-  if(!S.quickCaptures || !S.quickCaptures.length){
-    c.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:8px 0">No entries yet. Type below and tap Save.</div>';
-    return;
-  }
-  var h = '';
-  S.quickCaptures.slice().reverse().forEach(function(cap, ri){
-    var realIdx = S.quickCaptures.length - 1 - ri;
-    var d = new Date(cap.ts);
-    var time = d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + ' ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-    h += '<div style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:var(--surface);border:1px solid '+(cap.converted?'var(--green)':'var(--border)')+';border-radius:var(--rs);margin-bottom:6px">'
-       + '<div style="flex:1;min-width:0">'
-       + '<div style="font-size:13px;line-height:1.4;'+(cap.converted?'text-decoration:line-through;color:var(--muted)':'')+'">'+cap.text+'</div>'
-       + '<div style="font-size:10px;color:var(--muted);margin-top:3px">'+time+(cap.converted?' · Added to habits':'')+'</div>'
-       + '</div>'
-       + '<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">'
-       + (cap.converted ? '' : '<button onclick="addBrainDumpItem('+realIdx+')" style="padding:3px 8px;background:var(--accent);color:#fff;border:none;border-radius:var(--rx);font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap">+ Habit</button>')
-       + '<button onclick="deleteBrainEntry('+realIdx+')" style="padding:3px 8px;background:transparent;color:var(--muted2);border:1px solid var(--border);border-radius:var(--rx);font-size:10px;cursor:pointer">✕</button>'
-       + '</div></div>';
-  });
-  c.innerHTML = h;
+  try {
+    var c = document.getElementById('brain-dump-quick-list');
+    if(!c) return;
+    // Merge brainDump + quickCaptures into one display list (deduplicate by bdId)
+    var entries = [];
+    // Primary: S.brainDump entries
+    (S.brainDump || []).forEach(function(entry){
+      entries.push({ id: entry.id, text: entry.text, ts: entry.createdAt, converted: false, source: 'bd' });
+    });
+    // Secondary: quickCaptures that are NOT linked to brainDump (e.g. from + button)
+    (S.quickCaptures || []).forEach(function(cap, i){
+      if(!cap.bdId){
+        entries.push({ id: 'qc_'+i, text: cap.text, ts: cap.ts, converted: cap.converted, source: 'qc', qcIdx: i });
+      }
+    });
+    if(!entries.length){
+      safeSetHTML(c,'<div style="font-size:12px;color:var(--muted);padding:8px 0">No entries yet. Type below and tap Save.</div>','c');
+      return;
+    }
+    // Sort newest first
+    entries.sort(function(a,b){ return b.ts - a.ts; });
+    var h = '';
+    entries.forEach(function(entry){
+      var d = new Date(entry.ts);
+      var timeStr = d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + ' ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      var borderCol = entry.converted ? 'var(--green)' : 'var(--border)';
+      var textStyle = entry.converted ? 'text-decoration:line-through;color:var(--muted)' : '';
+      h += '<div data-bdid="'+entry.id+'" style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:var(--surface);border:1px solid '+borderCol+';border-radius:var(--rs);margin-bottom:6px">'
+         + '<div style="flex:1;min-width:0">'
+         + '<div style="font-size:13px;line-height:1.4;'+textStyle+'">'+entry.text+'</div>'
+         + '<div style="font-size:10px;color:var(--muted);margin-top:3px">'+timeStr+(entry.converted?' · Added':'')+'</div>'
+         + '</div>'
+         + '<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">';
+      if(!entry.converted){
+        h += '<button onclick="bdAddToCalendar(&quot;'+entry.id+'&quot;)" style="padding:3px 8px;background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:var(--rx);font-size:10px;cursor:pointer;white-space:nowrap">📅 Cal</button>';
+        h += '<button onclick="bdAddToHabit(&quot;'+entry.id+'&quot;)" style="padding:3px 8px;background:var(--accent);color:#fff;border:none;border-radius:var(--rx);font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap">+ Habit</button>';
+      }
+      h += '<button onclick="bdDelete(&quot;'+entry.id+'&quot;)" style="padding:3px 8px;background:transparent;color:var(--muted2);border:1px solid var(--border);border-radius:var(--rx);font-size:10px;cursor:pointer">✕</button>';
+      h += '</div></div>';
+    });
+    safeSetHTML(c,h,'c');
+  
+  } catch(e) { console.error('renderBrainDumpAll error:', e); }
 }
 
 function deleteQuickCapture(i){
@@ -3115,7 +3213,7 @@ function renderLifeSkills(){
   var c = document.getElementById('life-skills-list');
   if(!c) return;
   if(!S.lifeSkills || !Object.keys(S.lifeSkills).length){
-    c.innerHTML = '<div style="font-size:12px;color:var(--muted);margin-bottom:8px">No life skills yet.</div>';
+    safeSetHTML(c,'<div style="font-size:12px;color:var(--muted);margin-bottom:8px">No life skills yet.</div>','life-skills-list');
     return;
   }
   var h = '';
@@ -3135,7 +3233,7 @@ function renderLifeSkills(){
        + '<div style="font-size:10px;color:var(--muted);margin-top:4px">'+sk.xp+' / '+xpForNext+' XP · '+(sk.linkedHabitIds||[]).length+' habit(s) linked</div>'
        + '</div>';
   });
-  c.innerHTML = h;
+  safeSetHTML(c,h,'c');
 }
 
 function deleteLifeSkill(id){
@@ -3175,11 +3273,11 @@ toggleHabit = function(ai, si, hi){
 // save() is defined above — no wrapper needed
 
 // On visibility change (tab switch / app hide), force a save
-document.addEventListener('visibilitychange', function(){
+if(document) document.addEventListener('visibilitychange', function(){
   if(document.visibilityState === 'hidden') save();
 });
 // Also save before page unload
-window.addEventListener('beforeunload', function(){ save(); });
+if(window) window.addEventListener('beforeunload', function(){ save(); });
 
 function addBrainDumpItem(i){
   var cap = S.quickCaptures && S.quickCaptures[i];
@@ -3390,7 +3488,7 @@ renderChallenges = function() {
   var mq = document.getElementById('chal-mood-quests');
   if (!mq) return;
   if (!S.mood) {
-    mq.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:4px 0">Select a mood above to see personalised quests.</div>';
+    safeSetHTML(mq,'<div style="font-size:12px;color:var(--muted);padding:4px 0">Select a mood above to see personalised quests.</div>','chal-mood-quests');
     return;
   }
   var quests = MOOD_QUESTS[S.mood] || [];
@@ -3406,7 +3504,7 @@ renderChallenges = function() {
        + '<div class="qxp">' + (done ? 'undo' : '+' + q.x + ' XP') + '</div>'
        + '</div>';
   });
-  mq.innerHTML = h || '<div style="font-size:12px;color:var(--muted)">No quests for this mood.</div>';
+  safeSetHTML(mq,h || '<div style="font-size:12px;color:var(--muted)">No quests for this mood.</div>','mq');
 };
 
 // ═══════════════════════════════════════════════════
@@ -3440,15 +3538,142 @@ renderHeader = function() {
 // INIT on load
 // ═══════════════════════════════════════════════════
 window.addEventListener('load', function() {
-  renderDailyQuotes();
-  // Init theme toggle button text
-  var btn = document.getElementById('theme-toggle');
-  if (btn) btn.textContent = S.lightMode ? '🌙' : '☀️';
-  // Add moodQuestsDone to state if missing
-  if (!S.moodQuestsDone) S.moodQuestsDone = {};
+  try {
+    renderDailyQuotes();
+    // Init theme toggle button text
+    var btn = document.getElementById('theme-toggle');
+    if (btn) btn.textContent = S.lightMode ? '🌙' : '☀️';
+    // Add moodQuestsDone to state if missing
+    if (!S.moodQuestsDone) S.moodQuestsDone = {};
+  } catch(e) { console.error('LifeQuest quotes init error:', e); }
 }, { once: true, capture: true });
 
+// ─────────────────────────────────────────────────────
+// Brain Dump actions (use entry id, not array index)
+// ─────────────────────────────────────────────────────
+function bdGetEntry(id){
+  // Try brainDump first
+  if(S.brainDump){
+    var e = S.brainDump.find(function(x){ return x.id === id; });
+    if(e) return { entry: e, source: 'bd' };
+  }
+  // Try quickCaptures (id format: qc_N)
+  if(id.startsWith('qc_') && S.quickCaptures){
+    var idx = parseInt(id.slice(3));
+    if(S.quickCaptures[idx]) return { entry: S.quickCaptures[idx], source: 'qc', idx: idx };
+  }
+  return null;
+}
 
+function bdDelete(id){
+  if(S.brainDump){
+    S.brainDump = S.brainDump.filter(function(x){ return x.id !== id; });
+  }
+  // Also remove matching quickCaptures entry
+  if(S.quickCaptures){
+    S.quickCaptures = S.quickCaptures.filter(function(c){ return c.bdId !== id; });
+  }
+  // Handle qc_ ids
+  if(id.startsWith('qc_') && S.quickCaptures){
+    var idx = parseInt(id.slice(3));
+    if(!isNaN(idx)) S.quickCaptures.splice(idx, 1);
+  }
+  save();
+  renderBrainDumpAll();
+}
+
+function bdAddToHabit(id){
+  var ref = bdGetEntry(id);
+  if(!ref) return;
+  var text = ref.entry.text || ref.entry.text;
+  if(!S.areas || !S.areas.length){
+    toast('Create a section in Planner first', 'warn'); return;
+  }
+  pendingHabitTarget = {ai:0, si:-1};
+  var ni = document.getElementById('m-habit-name');
+  if(ni) ni.value = text;
+  // Mark as converted
+  if(ref.source === 'bd') ref.entry.converted = true;
+  if(ref.source === 'qc') ref.entry.converted = true;
+  save();
+  renderBrainDumpAll();
+  openModal('m-habit');
+}
+
+function bdParseTimeFromText(text){
+  // Returns {time: '14:00', activity: 'cleaned text'} or null for time
+  var t = text.toLowerCase();
+  var timeMatch = null;
+  var activityText = text;
+
+  // Patterns: "5pm", "5:30pm", "17:00", "at 7", "at 7pm", "@ 7", "7 o'clock"
+  var patterns = [
+    { re: /\bat\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i,        capture: true  },
+    { re: /@\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i,           capture: true  },
+    { re: /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i,            capture: true  },
+    { re: /\b([01]?\d|2[0-3]):([0-5]\d)\b/,                   capture: false },
+  ];
+
+  for(var pi = 0; pi < patterns.length; pi++){
+    var m = text.match(patterns[pi].re);
+    if(!m) continue;
+    var h, min = 0, meridiem = '';
+    if(patterns[pi].capture){
+      h = parseInt(m[1]);
+      if(m[2]) min = parseInt(m[2]);
+      meridiem = (m[3]||'').toLowerCase();
+    } else {
+      h = parseInt(m[1]);
+      min = parseInt(m[2]);
+    }
+    if(meridiem === 'pm' && h < 12) h += 12;
+    if(meridiem === 'am' && h === 12) h = 0;
+    if(h >= 0 && h <= 23 && min >= 0 && min <= 59){
+      timeMatch = (h < 10 ? '0':'')+h+':'+(min < 10 ? '0':'')+min;
+      activityText = text.replace(m[0], '').replace(/\s+/g,' ').trim();
+      // Remove trailing/leading prepositions
+      activityText = activityText.replace(/^(at|@|on)\s+/i,'').replace(/\s+(at|@)$/i,'').trim();
+      break;
+    }
+  }
+
+  // Check for relative days
+  var relative = '';
+  if(/\btomorrow\b/i.test(text))  relative = 'tomorrow';
+  else if(/\btoday\b/i.test(text)) relative = 'today';
+  else if(/\bnext\s+\w+/i.test(text)){ var nm = text.match(/next\s+(\w+)/i); if(nm) relative = nm[0]; }
+  if(relative){ activityText = activityText.replace(new RegExp('\\\\b'+relative+'\\\\b','i'),'').trim(); }
+
+  return { time: timeMatch, activity: activityText || text, relative: relative };
+}
+
+function bdAddToCalendar(id){
+  var ref = bdGetEntry(id);
+  if(!ref) return;
+  var text = ref.source === 'bd' ? ref.entry.text : (ref.entry.text || '');
+  var parsed = bdParseTimeFromText(text);
+  var timeVal = parsed.time || '09:00';
+  var activity = parsed.activity || text;
+
+  // Pre-fill calendar modal
+  var sel = document.getElementById('m-cal-habit-sel');
+  if(sel) sel.value = '';
+  var nameInp = document.getElementById('m-cal-name');
+  if(nameInp){ nameInp.value = activity; nameInp.disabled = false; }
+  var timeInp = document.getElementById('m-cal-time');
+  if(timeInp) timeInp.value = timeVal;
+
+  // Show the modal
+  var modal = document.getElementById('m-cal');
+  if(modal){ modal.classList.add('on'); setTimeout(function(){ if(nameInp) nameInp.focus(); }, 120); }
+
+  if(ref.source === 'bd') ref.entry.converted = true;
+  if(ref.source === 'qc') ref.entry.converted = true;
+  save();
+  renderBrainDumpAll();
+}
+
+// dual-key logic merged into save()/load() above
 </script>
 
 </body>
