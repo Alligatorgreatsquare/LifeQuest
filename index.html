@@ -833,95 +833,122 @@ var _idc=Date.now(); function uid(){return 'h'+(++_idc);}
 // ══════════════════════════════════════════
 // STORAGE
 // ══════════════════════════════════════════
-var STORAGE_KEY = 'lifequest_data_v1'; // key retained for reference; no longer used
-var _memStore = {}; // in-memory store — replaces localStorage
+
+var STORAGE_KEY = 'lifequest_data_v1';
 
 function save(){
-  try {
-    _memStore[STORAGE_KEY] = JSON.stringify(S); // in-memory only
-  } catch(e) {
-    console.error('SAVE ERROR:', e);
-  }
-  _backupMarkDirty(); // track that state changed since last manual backup
+try {
+localStorage.setItem(
+STORAGE_KEY,
+JSON.stringify(S)
+);
+} catch(e) {
+console.error('SAVE ERROR:', e);
 }
+
+_backupMarkDirty();
+}
+
 function getDefaultData(){
-  return {
-    name:'Hero', xp:0, level:1, totalXp:0, gems:0,
-    streak:0, bestStreak:0, lastDate:'',
-    tasksDone:0, bossesSlain:0, focusSessions:0,
-    energy:10, maxEnergy:10, lastEnergyReset:'', energyEnabled:false,
-    minDailyTasks:4, hygieneCount:0,
-    routines:[], essentialHabitIds:[],
-    areas:[], skills:{}, theme:'', avatar:'🧙', charSkin:'s1',
-    dailyQuests:[], questsDate:'',
-    bonusQuests:[], bonusQuestsDate:'',
-    bossHp:100, bossMax:100, bossDefeated:false, bossWeek:'',
-    currentBossIdx:0,
-    calEvents:[],
-    inventory:{xpPotion:0, bossBomb:0, streakShield:0},
-    achievements:{},
-    consecutiveHabitsToday:0,
-    penaltiesApplied:[],
-    legendaryProgress:{},
-    timeTracked:{},
-    ownedCosmetics:[],
-    currentBossDmgDealt:0,
-    streakShieldActive:false,
-    lifeSkills:{},
-    quickCaptures:[],
-    brainDump:[],
-    undoStack:[],
-    mood:'',
-    moodHistory:[],
-    moodQuestsDone:{},
-    sideQuestsDate:'', sideQuests:[],
-    funXp:0,
-    focusHabitIds:[],
-    mapFilters:{category:'', priority:'', todayOnly:false},
-    lightMode:false,
-    _essOpenSections:{},
-  };
+return {
+name:'Hero', xp:0, level:1, totalXp:0, gems:0,
+streak:0, bestStreak:0, lastDate:'',
+tasksDone:0, bossesSlain:0, focusSessions:0,
+energy:10, maxEnergy:10, lastEnergyReset:'', energyEnabled:false,
+minDailyTasks:4, hygieneCount:0,
+routines:[], essentialHabitIds:[],
+areas:[], skills:{}, theme:'', avatar:'🧙', charSkin:'s1',
+dailyQuests:[], questsDate:'',
+bonusQuests:[], bonusQuestsDate:'',
+bossHp:100, bossMax:100, bossDefeated:false, bossWeek:'',
+currentBossIdx:0,
+calEvents:[],
+inventory:{xpPotion:0, bossBomb:0, streakShield:0},
+achievements:{},
+consecutiveHabitsToday:0,
+penaltiesApplied:[],
+legendaryProgress:{},
+timeTracked:{},
+ownedCosmetics:[],
+currentBossDmgDealt:0,
+streakShieldActive:false,
+lifeSkills:{},
+quickCaptures:[],
+brainDump:[],
+undoStack:[],
+mood:'',
+moodHistory:[],
+moodQuestsDone:{},
+sideQuestsDate:'', sideQuests:[],
+funXp:0,
+focusHabitIds:[],
+mapFilters:{category:'', priority:'', todayOnly:false},
+lightMode:false,
+_essOpenSections:{},
+};
 }
 
 function load(){
-  var raw = null;
-  // Read from in-memory store (localStorage removed)
-  try { raw = _memStore[STORAGE_KEY] || null; } catch(e) {}
+var raw = null;
 
-  var parsed = null;
-  if(raw){
-    try {
-      parsed = JSON.parse(raw);
-      if(typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)){
-        console.error('LOAD ERROR: saved data is not a plain object — using defaults');
-        parsed = null;
-      }
-    } catch(e) {
-      console.error('LOAD ERROR:', e, '— using defaults');
-      parsed = null;
-    }
-  }
-
-  // Merge saved data over defaults so new keys always have safe values
-  var defaults = getDefaultData();
-  if(parsed){
-    for(var k in defaults){
-      if(!(k in parsed)) parsed[k] = defaults[k];
-    }
-    // Copy everything from parsed into S
-    for(var k in parsed) S[k] = parsed[k];
-  }
-  // (if parsed is null, S already has the defaults set at declaration time)
-
-  // Structural integrity: areas and subs must have habit/sub arrays
-  if(S.areas && S.areas.length){
-    S.areas.forEach(function(a){
-      if(!a.habits) a.habits = [];
-      if(!a.subs)   a.subs   = [];
-      a.subs.forEach(function(sub){ if(!sub.habits) sub.habits = []; });
-    });
-  }
+try {
+raw = localStorage.getItem(STORAGE_KEY);
+} catch(e) {
+console.error('LOAD ERROR:', e);
 }
+
+var parsed = null;
+
+if(raw){
+try{
+parsed = JSON.parse(raw);
+
+```
+  if(typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)){
+    parsed = null;
+  }
+}catch(e){
+  console.error('LOAD ERROR:', e);
+  parsed = null;
+}
+```
+
+}
+
+var defaults = getDefaultData();
+
+if(parsed){
+for(var k in defaults){
+if(!(k in parsed)){
+parsed[k] = defaults[k];
+}
+}
+
+```
+for(var k in parsed){
+  S[k] = parsed[k];
+}
+```
+
+}
+
+if(S.areas && S.areas.length){
+S.areas.forEach(function(a){
+if(!a.habits) a.habits = [];
+if(!a.subs) a.subs = [];
+
+```
+  a.subs.forEach(function(sub){
+    if(!sub.habits) sub.habits = [];
+  });
+});
+```
+
+}
+}
+
+window.addEventListener('beforeunload', save);
+
 // ══════════════════════════════════════════
 // BOOT
 // ══════════════════════════════════════════
