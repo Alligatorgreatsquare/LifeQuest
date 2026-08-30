@@ -1,0 +1,70 @@
+name: LifeQuest verify and persistence fix
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fix persistent local storage and verify syntax
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          old = """var STORAGE_KEY = 'lifequest_data_v1'; // key retained for reference; no longer used\nvar _memStore = {}; // in-memory store — replaces localStorage\n\nfunction save(){\n  try {\n    _memStore[STORAGE_KEY] = JSON.stringify(S); // in-memory only\n  } catch(e) {\n    console.error('SAVE ERROR:', e);\n  }\n  _backupMarkDirty(); // track that state changed since last manual backup\n}"""
+
+          new = """var STORAGE_KEY = 'lifequest_data_v1';\nvar STORAGE_BACKUP_KEY = 'lifequest_data_v1_backup';\nvar _storageAvailable = null;\n\nfunction _canUseLocalStorage(){\n  if(_storageAvailable !== null) return _storageAvailable;\n  try {\n    var testKey='__lifequest_storage_test__';\n    localStorage.setItem(testKey,'1');\n    localStorage.removeItem(testKey);\n    _storageAvailable=true;\n  } catch(e) {\n    _storageAvailable=false;\n    console.warn('LifeQuest: localStorage unavailable; changes will not persist between page loads.',e);\n  }\n  return _storageAvailable;\n}\n\nfunction save(){\n  try {\n    var payload=JSON.stringify(S);\n    if(_canUseLocalStorage()){\n      localStorage.setItem(STORAGE_KEY,payload);\n      // Keep a second local copy so a damaged primary record can be recovered.\n      localStorage.setItem(STORAGE_BACKUP_KEY,payload);\n    }\n  } catch(e) {\n    console.error('SAVE ERROR:', e);\n    // Quota/private-mode failures should never break the app UI.\n  }\n  _backupMarkDirty(); // track that state changed since last manual backup\n}"""
+
+          if old in s:
+              s=s.replace(old,new,1)
+          else:
+              # Idempotent: if the fix is already present, do nothing.
+              if 'STORAGE_BACKUP_KEY' not in s:
+                  raise SystemExit('Expected legacy in-memory storage block was not found; refusing to modify index.html')
+
+          old_load = """function load(){\n  var raw = null;\n  // Read from in-memory store (localStorage removed)\n  try { raw = _memStore[STORAGE_KEY] || null; } catch(e) {}\n\n  var parsed = null;"""
+
+          new_load = """function load(){\n  var raw = null;\n  // Read the primary persistent store. If it is missing/corrupt, try the local backup.\n  if(_canUseLocalStorage()){\n    try { raw = localStorage.getItem(STORAGE_KEY); } catch(e) { raw=null; }\n    if(!raw){\n      try { raw = localStorage.getItem(STORAGE_BACKUP_KEY); } catch(e) { raw=null; }\n    }\n  }\n\n  var parsed = null;"""
+
+          if old_load in s:
+              s=s.replace(old_load,new_load,1)
+          elif 'localStorage.getItem(STORAGE_KEY)' not in s:
+              raise SystemExit('Expected legacy load block was not found; refusing to modify index.html')
+
+          p.write_text(s,encoding='utf-8')
+
+      - name: JavaScript syntax check
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S|re.I)
+          Path('/tmp/lifequest.js').write_text('\n'.join(scripts),encoding='utf-8')
+          print('Extracted',len(scripts),'script block(s)')
+          PY
+          node --check /tmp/lifequest.js
+
+      - name: Commit persistence fix if needed
+        run: |
+          if git diff --quiet -- index.html; then
+            echo 'No changes needed.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Fix LifeQuest persistent local saving'
+          git push
