@@ -833,14 +833,35 @@ var _idc=Date.now(); function uid(){return 'h'+(++_idc);}
 // ══════════════════════════════════════════
 // STORAGE
 // ══════════════════════════════════════════
-var STORAGE_KEY = 'lifequest_data_v1'; // key retained for reference; no longer used
-var _memStore = {}; // in-memory store — replaces localStorage
+var STORAGE_KEY = 'lifequest_data_v1';
+var STORAGE_BACKUP_KEY = 'lifequest_data_v1_backup';
+var _storageAvailable = null;
+
+function _canUseLocalStorage(){
+  if(_storageAvailable !== null) return _storageAvailable;
+  try {
+    var testKey='__lifequest_storage_test__';
+    localStorage.setItem(testKey,'1');
+    localStorage.removeItem(testKey);
+    _storageAvailable=true;
+  } catch(e) {
+    _storageAvailable=false;
+    console.warn('LifeQuest: localStorage unavailable; changes will not persist between page loads.',e);
+  }
+  return _storageAvailable;
+}
 
 function save(){
   try {
-    _memStore[STORAGE_KEY] = JSON.stringify(S); // in-memory only
+    var payload=JSON.stringify(S);
+    if(_canUseLocalStorage()){
+      localStorage.setItem(STORAGE_KEY,payload);
+      // Keep a second local copy so a damaged primary record can be recovered.
+      localStorage.setItem(STORAGE_BACKUP_KEY,payload);
+    }
   } catch(e) {
     console.error('SAVE ERROR:', e);
+    // Quota/private-mode failures should never break the app UI.
   }
   _backupMarkDirty(); // track that state changed since last manual backup
 }
@@ -885,8 +906,13 @@ function getDefaultData(){
 
 function load(){
   var raw = null;
-  // Read from in-memory store (localStorage removed)
-  try { raw = _memStore[STORAGE_KEY] || null; } catch(e) {}
+  // Read the primary persistent store. If it is missing/corrupt, try the local backup.
+  if(_canUseLocalStorage()){
+    try { raw = localStorage.getItem(STORAGE_KEY); } catch(e) { raw=null; }
+    if(!raw){
+      try { raw = localStorage.getItem(STORAGE_BACKUP_KEY); } catch(e) { raw=null; }
+    }
+  }
 
   var parsed = null;
   if(raw){
